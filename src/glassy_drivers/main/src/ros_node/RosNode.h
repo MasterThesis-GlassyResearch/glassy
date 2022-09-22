@@ -13,11 +13,14 @@
 #include <future>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "vehicle_interfaces/srv/arm.hpp"     // CHANGE
+
 
 class MavsdkNode;
 class RosNode
 {
 private:
+    void arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response);
 
     
 public:

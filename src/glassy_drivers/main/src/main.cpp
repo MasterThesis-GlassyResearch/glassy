@@ -29,30 +29,18 @@ int main(int argc, char** argv)
  (void) argc;
  (void) argv;  
 
-
+ 
  std::cout<< "starting main....\n";
  MavsdkNode mav_com;
  RosNode ros_com;
+
+ rclcpp::init(argc, argv);
 
 
  ros_com.mav_node = &mav_com;
 
  ros_com.mav_node->print();
-//  node.init();
- 
-//   rclcpp::init(argc, argv);
-//   rclcpp::spin(std::make_shared<MinimalSubscriber>());
-//   rclcpp::shutdown();
-//   return 0;
- 
+
+ ros_com.init();
  
 }
-
-
-// int main(int argc, char * argv[])
-// {
-//   rclcpp::init(argc, argv);
-//   rclcpp::spin(std::make_shared<MinimalSubscriber>());
-//   rclcpp::shutdown();
-//   return 0;
-// }

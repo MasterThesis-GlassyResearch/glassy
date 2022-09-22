@@ -6,24 +6,44 @@
 #include <thread>
 #include <future>
 #include "rclcpp/rclcpp.hpp"
+#include "vehicle_interfaces/srv/arm.hpp"     // CHANGE
 // #include "std_msgs/msg/string.hpp"
-
 
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
+using namespace std::placeholders;
 
 
-
-RosNode::RosNode(){
-    std::cout<< "Creating RosNode ...\n";
+void test_function(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response){
+    std::cout<<"hello world\n";
+    (void) request;
+    (void) response;
 }
 
+RosNode::RosNode()
+{
+    std::cout << "Creating RosNode ...\n";
+}
 
-void RosNode::init(){
+void RosNode::arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response)
+{
+    (void) request;
+    (void) response;
+    std::cout << "Arming_disarming";
+}
+
+void RosNode::init()
+{
     this->ros_node = rclcpp::Node::make_shared("ros2_comunication_server");
 
-    // rclcpp::Service<example_interfaces::srv::AddTwoInts>::SharedPtr service =
-    // node->create_service<example_interfaces::srv::AddTwoInts>("add_two_ints", &add);
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr service =                 // CHANGE
+        this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); // CHANGE
 
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready to add three ints."); // CHANGE
+
+    std::cout<<"hello from ros node...";
+
+    rclcpp::spin(this->ros_node);
+    rclcpp::shutdown();
 }
