@@ -99,6 +99,12 @@ void MavsdkNode::print(){
 //#####################################################################
 
 
+void MavNode::arm_disarm(int mode){
+    
+}
+
+
+
 
 void MavsdkNode::usage_info(const std::string& bin_name)
 {

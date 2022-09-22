@@ -6,7 +6,8 @@
                 "/home/joaolehodey/glassy_ws/**",
                 "${workspaceFolder}/src/mavsdk_node",
                 "${workspaceFolder}/src/ros_node",
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/src/ros_node"
             ],
             "defines": [],
             "compilerPath": "/usr/lib/ccache/clang-10",

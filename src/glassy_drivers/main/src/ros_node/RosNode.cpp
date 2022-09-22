@@ -6,7 +6,7 @@
 #include <thread>
 #include <future>
 #include "rclcpp/rclcpp.hpp"
-#include "vehicle_interfaces/srv/arm.hpp"     // CHANGE
+#include "vehicle_interfaces/srv/arm.hpp"     
 // #include "std_msgs/msg/string.hpp"
 
 using std::chrono::milliseconds;
@@ -15,11 +15,6 @@ using std::this_thread::sleep_for;
 using namespace std::placeholders;
 
 
-void test_function(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response){
-    std::cout<<"hello world\n";
-    (void) request;
-    (void) response;
-}
 
 RosNode::RosNode()
 {
@@ -28,21 +23,39 @@ RosNode::RosNode()
 
 void RosNode::arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response)
 {
-    (void) request;
     (void) response;
-    std::cout << "Arming_disarming";
+
+    std::string mode;
+    switch (request->mode)
+    {
+    case 1: mode = "ARMING"; break;
+    case 0: mode = "DISARMING"; break;
+    default: mode = "UNKNOWN"; break;
+    }
+
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request %s",
+                mode.c_str());
+    this->mav_node->
 }
 
 void RosNode::init()
 {
+    //creating a node 
     this->ros_node = rclcpp::Node::make_shared("ros2_comunication_server");
 
-    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr service =                 // CHANGE
-        this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); // CHANGE
+    //binding arming and disarming service to the node
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr service =                 
+        this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); 
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready..."); 
 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Ready to add three ints."); // CHANGE
+    //binding arming and disarming service to the node
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr service =                 
+    this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); 
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready..."); 
 
-    std::cout<<"hello from ros node...";
+
+    RCLCPP_INFO("ROS2 comunication node should be ready..."); 
+
 
     rclcpp::spin(this->ros_node);
     rclcpp::shutdown();

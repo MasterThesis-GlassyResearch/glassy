@@ -21,8 +21,7 @@ class MavsdkNode
 private:
     void usage_info(const std::string& bin_name);
     std::shared_ptr<mavsdk::System> get_system(mavsdk::Mavsdk& mavsdk);
-    int argc;
-    char** argv;
+    void arm_disarm(int mode); // mode = 1 -> arms while mode = 0 disarms
 
     
 public:
@@ -30,7 +29,7 @@ public:
     ~MavsdkNode(){ };
 
     std::shared_ptr<mavsdk::System> system;
-    void init(std::string port = "udp://:14540",bool fowarding = false);
+    void init(std::string port = "udp://:14540",bool fowarding = false); //make port a dynamic entry
     void print(); //------------ used for testing purposes
     RosNode* ros_node;
 
