@@ -23,24 +23,39 @@ using std::this_thread::sleep_for;
 
 
 
+
 int main(int argc, char** argv)
 {
-    //avoids unused variable warning
- (void) argc;
- (void) argv;  
 
+//  rclcpp::init(argc, argv);
+ 
  
  std::cout<< "starting main....\n";
  MavsdkNode mav_com;
  RosNode ros_com;
 
- rclcpp::init(argc, argv);
 
-
+ 
+ mav_com.ros_node = &ros_com;
  ros_com.mav_node = &mav_com;
 
- ros_com.mav_node->print();
 
- ros_com.init();
+ rclcpp::init(argc, argv);
+
+ mav_com.init();
+
+
+
+
+ 
+//  ros_com.mav_node->print();
+
+// sleep_for(seconds(20));
+
+ 
+//  ros_com.init();
+
+// rclcpp::spin(ros_com.ros_node);
+// rclcpp::shutdown();   //  -
  
 }
