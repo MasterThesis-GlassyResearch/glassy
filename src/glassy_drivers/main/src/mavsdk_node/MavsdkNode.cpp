@@ -14,6 +14,9 @@ using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
 
+using namespace std::placeholders;
+
+
 //#####################################################################
 //--------------------------------------------------------------------#
 //          Public Methods -------------------------------------------#
@@ -58,11 +61,10 @@ void MavsdkNode::init(std::string port, bool fowarding)
     }
 
     //---------------------subscribe to telemetry streams
-
-    this->telemetry->subscribe_position([](mavsdk::Telemetry::Position position)
-                                        { std::cout << "Altitude: " << position.relative_altitude_m << " m" << std::endl
-                                                    << "Latitude: " << position.latitude_deg << std::endl
-                                                    << "Longitude: " << position.longitude_deg << '\n'; });
+     //std::bind(&RosNode::arm_disarm, this, _1, _2)
+    this->telemetry->subscribe_position(std::bind(&MavsdkNode::publish_global_position, this, _1));
+    this->telemetry->subscribe_odometry(std::bind(&MavsdkNode::publish_odometry, this, _1));
+    // this->telemetry->subscribe_positionned(std::bind(&MavsdkNode::publish_global_position, this, _1));
 
     // Set up callback to monitor flight mode 'changes'
     mavsdk::Telemetry::FlightMode oldFlightMode = mavsdk::Telemetry::FlightMode::Unknown;
@@ -113,10 +115,19 @@ void MavsdkNode::arm_disarm(int mode) //turn into async (TODO)
 
 
 //////////////////////////////////////////////
+//          Change Flight Mode  ---------------------TODO
+//////////////////////////////////////////////
+void MavsdkNode::change_flight_mode(std::string flight_mode) //turn into async (TODO)
+{
+    (void) flight_mode;
+}
+
+
+//////////////////////////////////////////////
 //          Use Mavsdk Telemetry Object to Subscribe to Telemetry Data
 //////////////////////////////////////////////
 void MavsdkNode::subscribe_info(){
- return;
+ return;        //------------------------------- todo
 }
 
 
@@ -129,6 +140,75 @@ void MavsdkNode::subscribe_info(){
 //          Private Methods ------------------------------------------#
 //--------------------------------------------------------------------#
 //#####################################################################
+
+
+//////////////////////////////////////////////
+//          Publish Global Position
+//////////////////////////////////////////////
+void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position){
+//  (void) position;
+ auto message = vehicle_interfaces::msg::Globalpos();
+ message.longitude = position.longitude_deg;
+ message.latitude = position.latitude_deg;
+ message.altitude = position.relative_altitude_m;
+//  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
+ this->ros_node->global_position_publisher->publish(message);
+ return;        
+}
+
+//////////////////////////////////////////////
+//          Publish Local Position (NED)
+//////////////////////////////////////////////
+void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionNed position){
+//  (void) position;
+ auto message = vehicle_interfaces::msg::Nedpos();
+ message.north = position.north_m;
+ message.east = position.east_m;
+ message.down = position.down_m;
+//  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
+ this->ros_node->ned_position_publisher->publish(message);
+ return;        
+}
+
+//////////////////////////////////////////////
+//          Publish Odometry
+//////////////////////////////////////////////
+void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry){
+ (void) odometry;
+
+
+//  std::cout<< odometry.time_usec << std::endl;
+ std::cout<< "Velocity:" << std::endl;
+ std::cout<< "  x="<< odometry.velocity_body.x_m_s << std::endl;
+ std::cout<< "  y="<< odometry.velocity_body.y_m_s << std::endl;
+ std::cout<< "  z="<< odometry.velocity_body.z_m_s << std::endl;
+ std::cout<< "Position:" << std::endl;
+ std::cout<< "  x="<< odometry.position_body.x_m << std::endl;
+ std::cout<< "  y="<< odometry.position_body.y_m << std::endl;
+ std::cout<< "  z="<< odometry.position_body.z_m << std::endl;
+
+
+
+//  auto message = vehicle_interfaces::msg::Nedpos();
+//  message.north = position.north_m;
+//  message.east = position.east_m;
+//  message.down = position.down_m;
+// //  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
+//  this->ros_node->ned_position_publisher->publish(message);
+//  return;        
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

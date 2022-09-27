@@ -7,7 +7,10 @@
 #include <future>
 #include "rclcpp/rclcpp.hpp"
 #include "vehicle_interfaces/srv/arm.hpp"     
-// #include "std_msgs/msg/string.hpp"
+#include "vehicle_interfaces/msg/test.hpp"     
+#include "vehicle_interfaces/msg/globalpos.hpp"    
+#include "vehicle_interfaces/msg/nedpos.hpp"    
+
 
 using std::chrono::milliseconds;
 using std::chrono::seconds;
@@ -46,11 +49,15 @@ void RosNode::init()
     this->ros_node = rclcpp::Node::make_shared("ros2_comunication_server");
 
     // binding arming and disarming service to the node
-    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr service =                 
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr arm_disarm_service =                 
         this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready..."); 
 
     //setup publishers and subscribers...
+    this->global_position_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Globalpos>("global_position", 10);
+    this->ned_position_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Nedpos>("local_position", 10);
+    this->attitude_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Test>("attitude", 10);
+
 
 
 

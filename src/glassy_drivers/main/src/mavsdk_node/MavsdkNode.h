@@ -18,12 +18,17 @@ class RosNode;
 class MavsdkNode
 {
 private:
-    // pribvate methods
+    // private methods-------------------
     void usage_info(const std::string& bin_name);
     void subscribe_info();
 
+    // publishing callbacks
+    void publish_global_position(mavsdk::Telemetry::Position position);
+    void publish_odometry(mavsdk::Telemetry::Odometry odometry);
+    void publish_ned_position(mavsdk::Telemetry::PositionNed position);
 
-    //private variables
+
+    //private variables-------------------
     std::shared_ptr<mavsdk::System> get_system(mavsdk::Mavsdk& mavsdk);
     std::shared_ptr<mavsdk::Telemetry> telemetry;
     std::shared_ptr<mavsdk::Action> action;
@@ -45,6 +50,8 @@ public:
     void init(std::string port = "udp://:14540",bool fowarding = false); //make port a dynamic entry
     void print(); //------------ used for testing purposes
     void arm_disarm(int mode); // mode = 1 -> arms while mode = 0 disarms
+    void change_flight_mode(std::string flight_mode); //turn into async (TODO)
+
 
 
 
