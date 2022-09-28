@@ -15,6 +15,7 @@
 #include "vehicle_interfaces/msg/test.hpp"    
 #include "vehicle_interfaces/msg/globalpos.hpp"    
 #include "vehicle_interfaces/msg/nedpos.hpp"    
+#include "vehicle_interfaces/msg/attitude.hpp"    
 
 
 class MavsdkNode;
@@ -27,18 +28,18 @@ private:
 
     
 public:
-    RosNode();
+    RosNode(std::shared_ptr<rclcpp::Node> node);
     ~RosNode(){ };
     void init();
 
-    MavsdkNode* mav_node;   //consider adding to private variables, using then public function to set it 
+    std::shared_ptr<MavsdkNode> mav_node; //consider adding to private variables, using then public function to set it 
     std::shared_ptr<rclcpp::Node> ros_node;   //consider adding to private variables, using then public function to set it 
     
 
     // publishers
     rclcpp::Publisher<vehicle_interfaces::msg::Globalpos>::SharedPtr global_position_publisher;
     rclcpp::Publisher<vehicle_interfaces::msg::Nedpos>::SharedPtr ned_position_publisher;
-    rclcpp::Publisher<vehicle_interfaces::msg::Test>::SharedPtr attitude_publisher;
+    rclcpp::Publisher<vehicle_interfaces::msg::Attitude>::SharedPtr attitude_publisher;
 };
 
 #endif
