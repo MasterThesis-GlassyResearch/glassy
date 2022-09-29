@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
     //create ros node to be used 
     std::cout << "starting main....\n";
-    std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("ros_communication_node");
+    std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("ros2_communication_node");
 
     // initialize an object of both MavlinkNode and RosNode 
     std::shared_ptr<RosNode> ros_com = std::make_shared<RosNode>(nh);

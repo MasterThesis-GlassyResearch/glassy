@@ -40,6 +40,7 @@ public:
     rclcpp::Publisher<vehicle_interfaces::msg::Globalpos>::SharedPtr global_position_publisher;
     rclcpp::Publisher<vehicle_interfaces::msg::Nedpos>::SharedPtr ned_position_publisher;
     rclcpp::Publisher<vehicle_interfaces::msg::Attitude>::SharedPtr attitude_publisher;
+
 };
 
 #endif

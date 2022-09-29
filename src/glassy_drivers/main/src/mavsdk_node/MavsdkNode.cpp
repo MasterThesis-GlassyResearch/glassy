@@ -53,15 +53,16 @@ void MavsdkNode::init(std::string port, bool fowarding)
     }
 
     system = this->get_system();
-    // this->ros_node->init();
 }
 
 
 
 //////////////////////////////////////////////
-//          Arm and Disarm
+//          Service callbacks
 //////////////////////////////////////////////
-void MavsdkNode::arm_disarm(int mode) //turn into async (TODO)
+
+// Arm and Disarm Service Callback
+void MavsdkNode::arm_disarm(int mode) 
 {
     if (!this->action)
         return; // check if action plugin has been initialized
@@ -74,7 +75,6 @@ void MavsdkNode::arm_disarm(int mode) //turn into async (TODO)
         if (arm_result != mavsdk::Action::Result::Success)
         {
             std::cout << "Arming failed:" << arm_result << '\n';
-            return; // Exit if arming fails
         }
     }
     if (mode == 0)
@@ -84,7 +84,6 @@ void MavsdkNode::arm_disarm(int mode) //turn into async (TODO)
         if (disarm_result != mavsdk::Action::Result::Success)
         {
             std::cout << "Killing failed:" << disarm_result << '\n';
-            return; // Exit if killing fails
         }
     }
 }
@@ -96,46 +95,41 @@ void MavsdkNode::arm_disarm(int mode) //turn into async (TODO)
 
 //#####################################################################
 //--------------------------------------------------------------------#
-//          Private Methods ------------------------------------------#
+//          Private Methods ------------------------------------------# 
 //--------------------------------------------------------------------#
 //#####################################################################
 
 
+
+
 //////////////////////////////////////////////
-//          Publish Global Position
+//     Subscription Callbacks
 //////////////////////////////////////////////
 
+// ------------- Publish Global Position
 void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position){
  auto message = vehicle_interfaces::msg::Globalpos();
  message.longitude = position.longitude_deg;
  message.latitude = position.latitude_deg;
  message.altitude = position.relative_altitude_m;
-//  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
  this->ros_node->global_position_publisher->publish(message);
  return;        
 }
 
-//////////////////////////////////////////////
-//          Publish Local Position (NED)
-//////////////////////////////////////////////
+// ------------- Publish Local Position (NED)
 void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionNed position){
  auto message = vehicle_interfaces::msg::Nedpos();
  message.north = position.north_m;
  message.east = position.east_m;
  message.down = position.down_m;
-//  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
  this->ros_node->ned_position_publisher->publish(message);
  return;        
 }
 
-//////////////////////////////////////////////
-//          Publish Odometry
-//////////////////////////////////////////////
+// ------------- Publish Odometry
 void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry){
  (void) odometry;
 
-
-//  std::cout<< odometry.time_usec << std::endl;
  std::cout<< "Velocity:" << std::endl;
  std::cout<< "  x="<< odometry.velocity_body.x_m_s << std::endl;
  std::cout<< "  y="<< odometry.velocity_body.y_m_s << std::endl;
@@ -144,8 +138,6 @@ void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry){
  std::cout<< "  x="<< odometry.position_body.x_m << std::endl;
  std::cout<< "  y="<< odometry.position_body.y_m << std::endl;
  std::cout<< "  z="<< odometry.position_body.z_m << std::endl;
-
-
 
 //  auto message = vehicle_interfaces::msg::Nedpos();
 //  message.north = position.north_m;
@@ -157,7 +149,7 @@ void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry){
 }
 
 
-
+// ------------- Publish Attitude
 void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
  std::cout<< "Angles:" << std::endl;
  std::cout<< "  pitch="<< euler_angles.roll_deg  << std::endl;
@@ -168,11 +160,7 @@ void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
  message.pitch = euler_angles.pitch_deg;
  message.roll = euler_angles.roll_deg;
  message.yaw = euler_angles.yaw_deg;
-//  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%f' '%f' '%f'", message.pitch, message.roll, message.yaw);    // CHANGE
  this->ros_node->attitude_publisher->publish(message);
-//  std::cout<<"fuck";
- return;        
-
 }
 
 
@@ -182,33 +170,8 @@ void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
 
 
 
-
-
-
 //////////////////////////////////////////////
-//          Subscibe to telemetry streams
-//////////////////////////////////////////////
-
-
-void subscribe_telemetry(const std::vector<std::string> &subscriptions){
-     (void) subscriptions;
-    // for 
-    std::cout<<"subcribing";
-
-}
-
-
-
-
-
-
-
-
-
-
-
-//////////////////////////////////////////////
-//          Get mavlink system
+//     Get and Initialize Mavsdk system and subscriptions
 //////////////////////////////////////////////
 
 void MavsdkNode::usage_info(const std::string &bin_name)
@@ -283,7 +246,6 @@ void MavsdkNode::initialize_system(){
     this->telemetry->subscribe_position(std::bind(&MavsdkNode::publish_global_position, this, _1));
     this->telemetry->subscribe_odometry(std::bind(&MavsdkNode::publish_odometry, this, _1));
     this->telemetry->subscribe_attitude_euler(std::bind(&MavsdkNode::publish_attitude, this, _1));
-
 
     });
 
