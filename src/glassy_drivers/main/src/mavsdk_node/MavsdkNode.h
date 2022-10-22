@@ -6,6 +6,7 @@
 #include <mavsdk/plugins/action/action.h>
 #include <mavsdk/plugins/offboard/offboard.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
+#include <vehicle_interfaces/msg/state.hpp>
 #include <iostream>
 #include <chrono>
 #include <string>
@@ -24,6 +25,7 @@ private:
     void subscribe_telemetry(const std::vector<std::string> &subscriptions);
     std::shared_ptr<mavsdk::System> get_system();
     void initialize_system();
+    void print_state();
 
 
     // publishing callbacks
@@ -31,6 +33,9 @@ private:
     void publish_odometry(mavsdk::Telemetry::Odometry odometry);
     void publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles);
     void publish_ned_position(mavsdk::Telemetry::PositionNed position);
+
+    // messages
+    vehicle_interfaces::msg::State state_message;
 
 
     //private variables-------------------
@@ -45,18 +50,22 @@ public:
 
     //constructor and destructor
     MavsdkNode();
-    ~MavsdkNode(){ };
+    ~MavsdkNode(){};
 
     //public variables
     std::shared_ptr<mavsdk::System> system;
     std::shared_ptr<RosNode> ros_node;
 
     //public methods
-    void init(std::string port = "udp://:14540",bool fowarding = false); //make port a dynamic entry
+    void init(std::string port = "udp://:14550",bool fowarding = false); //make port a dynamic entry
     void print(); //------------ used for testing purposes
     void arm_disarm(int mode); // mode = 1 -> arms while mode = 0 disarms
 
 
+    // Offboard Mode
+    mavsdk::Offboard::Attitude actuator_msg{};
+    void offboard_actuator_control(float steering_signal, float throttle_signal);
+    void enter_offboard();
 };
 
 #endif

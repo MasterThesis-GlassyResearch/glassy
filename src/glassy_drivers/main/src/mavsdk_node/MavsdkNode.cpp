@@ -10,11 +10,7 @@
 #include <future>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "vehicle_interfaces/srv/arm.hpp"    
-#include "vehicle_interfaces/msg/test.hpp"    
-#include "vehicle_interfaces/msg/globalpos.hpp"    
-#include "vehicle_interfaces/msg/nedpos.hpp"    
-#include "vehicle_interfaces/msg/attitude.hpp"    
+#include "vehicle_interfaces/srv/arm.hpp"   
 
 
 using std::chrono::milliseconds;
@@ -37,10 +33,6 @@ MavsdkNode::MavsdkNode()
 
 void MavsdkNode::init(std::string port, bool fowarding)
 {
-    
-    
-     // check this parameters later
-
     (void)fowarding; // for now to prevent warnings
     std::cout << "Trying to connect to server..." << std::endl;
     mavsdk = std::make_shared<mavsdk::Mavsdk>();
@@ -101,66 +93,91 @@ void MavsdkNode::arm_disarm(int mode)
 
 
 
+//////////////////////////////////////////////
+//     Offboard Mode
+//////////////////////////////////////////////
+
+
+// ----------- Enter Offboard Mode
+void MavsdkNode::enter_offboard(){
+    std::cout<<"Entering Offboard...";
+    this->offboard_actuator_control(0.0, 0.0); //send signal for offboard to be accepted
+    mavsdk::Offboard::Result offboard_result = this->offboard->start();
+    if (offboard_result != mavsdk::Offboard::Result::Success) {
+        std::cerr << "Offboard start failed.... try again" << offboard_result << '\n';
+    }
+    std::cout << "Offboard started\n";
+    return;
+}
+
+
+// ----------- Publish to vehicle actuator signals
+void MavsdkNode::offboard_actuator_control(float steering_signal, float throttle_signal){
+
+    this->actuator_msg.roll_deg = steering_signal;
+    this->actuator_msg.thrust_value = throttle_signal;
+    this->offboard->set_attitude(actuator_msg);
+    std::cout<<"sending actuator signals";
+    return;
+}
+
+
 
 //////////////////////////////////////////////
-//     Subscription Callbacks
+//     State Of Vehicle Subscription Callbacks
 //////////////////////////////////////////////
 
 // ------------- Publish Global Position
 void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position){
- auto message = vehicle_interfaces::msg::Globalpos();
- message.longitude = position.longitude_deg;
- message.latitude = position.latitude_deg;
- message.altitude = position.relative_altitude_m;
- this->ros_node->global_position_publisher->publish(message);
- return;        
+ this->state_message.altitude = position.relative_altitude_m;
+ this->state_message.latitude = position.latitude_deg;
+ this->state_message.longitude = position.longitude_deg;
+
+ this->print_state();
+
+ this->ros_node->state_publisher->publish(this->state_message);      
 }
 
 // ------------- Publish Local Position (NED)
 void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionNed position){
- auto message = vehicle_interfaces::msg::Nedpos();
- message.north = position.north_m;
- message.east = position.east_m;
- message.down = position.down_m;
- this->ros_node->ned_position_publisher->publish(message);
- return;        
+
+ this->state_message.north = position.north_m;
+ this->state_message.east = position.east_m;
+ this->state_message.down = position.down_m;
+
+ this->print_state();
+
+ this->ros_node->state_publisher->publish(this->state_message);
+    
 }
 
 // ------------- Publish Odometry
 void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry){
- (void) odometry;
 
- std::cout<< "Velocity:" << std::endl;
- std::cout<< "  x="<< odometry.velocity_body.x_m_s << std::endl;
- std::cout<< "  y="<< odometry.velocity_body.y_m_s << std::endl;
- std::cout<< "  z="<< odometry.velocity_body.z_m_s << std::endl;
- std::cout<< "Position:" << std::endl;
- std::cout<< "  x="<< odometry.position_body.x_m << std::endl;
- std::cout<< "  y="<< odometry.position_body.y_m << std::endl;
- std::cout<< "  z="<< odometry.position_body.z_m << std::endl;
+ this->state_message.surge_velocity = odometry.velocity_body.x_m_s;
+ this->state_message.sway_velocity = odometry.velocity_body.y_m_s;
 
-//  auto message = vehicle_interfaces::msg::Nedpos();
-//  message.north = position.north_m;
-//  message.east = position.east_m;
-//  message.down = position.down_m;
-// //  RCLCPP_INFO(this->ros_node->ros_node->get_logger(), "Publishing: '%d'", message.num);    // CHANGE
-//  this->ros_node->ned_position_publisher->publish(message);
-//  return;        
+ this->state_message.yaw_rate = odometry.angular_velocity_body.yaw_rad_s;
+ this->state_message.roll_rate = odometry.angular_velocity_body.roll_rad_s;
+ this->state_message.pitch_rate = odometry.angular_velocity_body.pitch_rad_s;
+
+ this->print_state();
+
+ this->ros_node->state_publisher->publish(this->state_message);
+
 }
 
 
 // ------------- Publish Attitude
 void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
- std::cout<< "Angles:" << std::endl;
- std::cout<< "  pitch="<< euler_angles.roll_deg  << std::endl;
- std::cout<< "  roll="<< euler_angles.pitch_deg  << std::endl;
- std::cout<< "  yaw="<< euler_angles.yaw_deg  << std::endl;
 
- auto message = vehicle_interfaces::msg::Attitude();
- message.pitch = euler_angles.pitch_deg;
- message.roll = euler_angles.roll_deg;
- message.yaw = euler_angles.yaw_deg;
- this->ros_node->attitude_publisher->publish(message);
+ this->state_message.pitch = euler_angles.pitch_deg;
+ this->state_message.roll = euler_angles.roll_deg;
+ this->state_message.yaw = euler_angles.yaw_deg;
+
+ this->print_state();
+
+ this->ros_node->state_publisher->publish(this->state_message);
 }
 
 
@@ -170,9 +187,31 @@ void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
 
 
 
-//////////////////////////////////////////////
-//     Get and Initialize Mavsdk system and subscriptions
-//////////////////////////////////////////////
+/*
+ ------------------------------------------------------------
+ Initialization of Mavsdk System, aswell as some helper functions
+ -------------------------------------------------------------
+*/
+
+
+//print current state information
+void MavsdkNode::print_state(){
+
+ std::cout<< "Velocity:" << std::endl;
+ std::cout<< "  surge ="<< this->state_message.surge_velocity << std::endl;
+ std::cout<< "  sway  ="<< this->state_message.sway_velocity << std::endl;
+ std::cout<< "Position:" << std::endl;
+ std::cout<< "  north ="<< this->state_message.north << std::endl;
+ std::cout<< "  east  ="<< this->state_message.east << std::endl;
+ std::cout<< "  down  ="<< this->state_message.down<< std::endl;
+ std::cout<< "Angles:" << std::endl;
+ std::cout<< "  pitch ="<< this->state_message.pitch  << std::endl;
+ std::cout<< "  roll  ="<< this->state_message.roll  << std::endl;
+ std::cout<< "  yaw   ="<< this->state_message.yaw  << std::endl;
+ std::cout<< "Angular Rates:" << std::endl;
+ std::cout<< "  yaw_rate ="<< this->state_message.yaw_rate  << std::endl;
+}
+
 
 void MavsdkNode::usage_info(const std::string &bin_name)
 {
@@ -251,3 +290,5 @@ void MavsdkNode::initialize_system(){
 
     th.detach();
 }
+
+

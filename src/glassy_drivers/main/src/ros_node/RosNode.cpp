@@ -6,12 +6,12 @@
 #include <thread>
 #include <future>
 #include "rclcpp/rclcpp.hpp"
-#include "vehicle_interfaces/srv/arm.hpp"     
-#include "vehicle_interfaces/msg/test.hpp"     
-#include "vehicle_interfaces/msg/globalpos.hpp"    
-#include "vehicle_interfaces/msg/nedpos.hpp"   
-#include "vehicle_interfaces/msg/attitude.hpp"    
-
+#include "vehicle_interfaces/srv/arm.hpp"
+#include "vehicle_interfaces/msg/test.hpp"
+#include "vehicle_interfaces/msg/globalpos.hpp"
+#include "vehicle_interfaces/msg/nedpos.hpp"
+#include "vehicle_interfaces/msg/attitude.hpp"
+#include "vehicle_interfaces/msg/actuatorsignals.hpp"
 
 
 using std::chrono::milliseconds;
@@ -21,6 +21,13 @@ using namespace std::placeholders;
 
 
 
+
+
+void RosNode::actuator_control_signals(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg){
+    this->mav_node->offboard_actuator_control(msg->steering, msg->throttle);
+}
+
+
 RosNode::RosNode(std::shared_ptr<rclcpp::Node> node) : ros_node(node)
 {
     std::cout << "Creating RosNode ...\n";
@@ -28,14 +35,20 @@ RosNode::RosNode(std::shared_ptr<rclcpp::Node> node) : ros_node(node)
 
 void RosNode::arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response)
 {
-    (void) response;
+    (void)response;
 
     std::string mode;
     switch (request->mode)
     {
-    case 1: mode = "ARMING"; break;
-    case 0: mode = "DISARMING"; break;
-    default: mode = "UNKNOWN"; break;
+    case 1:
+        mode = "ARMING";
+        break;
+    case 0:
+        mode = "DISARMING";
+        break;
+    default:
+        mode = "UNKNOWN";
+        break;
     }
 
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request %s",
@@ -46,14 +59,23 @@ void RosNode::arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Req
 
 void RosNode::init()
 {
+
+    // get and set parameters from yaml
+    this->ros_node->declare_parameter("subscriptions.state", true);
+    this->state_subscription = this->ros_node->get_parameter("subscriptions.state").as_bool();
+
     // binding arming and disarming service to the node
-    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr arm_disarm_service =                 
-    this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2)); 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready..."); 
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr arm_disarm_service =
+        this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready...");
 
-    //setup publishers and subscribers...
-    this->attitude_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Attitude>("attitude", 1);
-    this->global_position_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Globalpos>("global_position", 1);
-    this->ned_position_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::Nedpos>("local_position", 1);
 
+    //
+    this->actuator_subscriber = this->ros_node->create_subscription<vehicle_interfaces::msg::Actuatorsignals>("offboard_actuator_signals", 1, std::bind(&RosNode::testing, this, _1));
+
+    // setup publishers and subscribers...
+    if (state_subscription)
+    {
+        this->state_publisher = this->ros_node->create_publisher<vehicle_interfaces::msg::State>("state_vehicle", 1);
+    }
 }

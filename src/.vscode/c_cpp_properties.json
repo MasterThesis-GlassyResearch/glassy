@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "~/glassy_ws/**",
+                "/opt/ros/foxy/**"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/lib/ccache/clang-10",
+            "cStandard": "c17",
+            "cppStandard": "c++14",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}

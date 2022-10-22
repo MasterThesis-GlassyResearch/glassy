@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     // initialize publishers in ros node and suscribers in mav node
     ros_com->init();
-    mav_com->init();
+    mav_com->init("udp://:14550", true);
 
 
     // spin node 

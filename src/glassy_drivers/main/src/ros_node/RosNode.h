@@ -11,11 +11,9 @@
 #include <future>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "vehicle_interfaces/srv/arm.hpp"    
-#include "vehicle_interfaces/msg/test.hpp"    
-#include "vehicle_interfaces/msg/globalpos.hpp"    
-#include "vehicle_interfaces/msg/nedpos.hpp"    
-#include "vehicle_interfaces/msg/attitude.hpp"    
+#include "vehicle_interfaces/srv/arm.hpp"
+#include "vehicle_interfaces/msg/actuatorsignals.hpp"
+#include <vehicle_interfaces/msg/state.hpp>
 
 
 class MavsdkNode;
@@ -25,22 +23,28 @@ private:
     // service and subscriber callbacks
     void arm_disarm(const std::shared_ptr<vehicle_interfaces::srv::Arm::Request> request, std::shared_ptr<vehicle_interfaces::srv::Arm::Response> response);
 
-
-    
 public:
     RosNode(std::shared_ptr<rclcpp::Node> node);
-    ~RosNode(){ };
+    ~RosNode(){};
     void init();
 
-    std::shared_ptr<MavsdkNode> mav_node; //consider adding to private variables, using then public function to set it 
-    std::shared_ptr<rclcpp::Node> ros_node;   //consider adding to private variables, using then public function to set it 
-    
+    std::shared_ptr<MavsdkNode> mav_node;
+    std::shared_ptr<rclcpp::Node> ros_node;
+
+    // subscribers
+    rclcpp::Subscription<vehicle_interfaces::msg::Actuatorsignals>::SharedPtr actuator_subscriber;
+    void actuator_control_signals(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg);
 
     // publishers
-    rclcpp::Publisher<vehicle_interfaces::msg::Globalpos>::SharedPtr global_position_publisher;
-    rclcpp::Publisher<vehicle_interfaces::msg::Nedpos>::SharedPtr ned_position_publisher;
-    rclcpp::Publisher<vehicle_interfaces::msg::Attitude>::SharedPtr attitude_publisher;
+    rclcpp::Publisher<vehicle_interfaces::msg::State>::SharedPtr state_publisher;
 
+    // parameters
+    bool state_subscription;
+
+    void testing(vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg) {
+        (void) msg;
+        return;
+        }
 };
 
 #endif

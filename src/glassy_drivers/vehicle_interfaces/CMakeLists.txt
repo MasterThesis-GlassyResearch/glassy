@@ -25,6 +25,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/Globalpos.msg"
   "msg/Nedpos.msg"
   "msg/Attitude.msg"
+  "msg/State.msg"
+  "msg/Actuatorsignals.msg"
   "srv/Arm.srv"
 )
 

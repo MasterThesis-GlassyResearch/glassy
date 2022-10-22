@@ -1,0 +1,14 @@
+float64 longitude
+float64 latitude
+float64 altitude
+float64 north
+float64 east
+float64 down
+float64 pitch
+float64 roll
+float64 yaw
+float64 pitch_rate
+float64 yaw_rate
+float64 roll_rate
+float64 surge_velocity
+float64 sway_velocity
