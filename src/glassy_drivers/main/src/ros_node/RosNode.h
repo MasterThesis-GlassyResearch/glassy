@@ -31,9 +31,12 @@ public:
     std::shared_ptr<MavsdkNode> mav_node;
     std::shared_ptr<rclcpp::Node> ros_node;
 
+    //services
+    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr arm_disarm_service;
+
     // subscribers
     rclcpp::Subscription<vehicle_interfaces::msg::Actuatorsignals>::SharedPtr actuator_subscriber;
-    void actuator_control_signals(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg);
+    void actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg);
 
     // publishers
     rclcpp::Publisher<vehicle_interfaces::msg::State>::SharedPtr state_publisher;
@@ -41,10 +44,7 @@ public:
     // parameters
     bool state_subscription;
 
-    void testing(vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg) {
-        (void) msg;
-        return;
-        }
+
 };
 
 #endif

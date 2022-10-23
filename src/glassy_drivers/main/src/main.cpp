@@ -38,8 +38,9 @@ int main(int argc, char **argv)
     ros_com->mav_node = mav_com;
 
     // initialize publishers in ros node and suscribers in mav node
+    // std::cout<< argv[1];
     ros_com->init();
-    mav_com->init("udp://:14550", true);
+    mav_com->init("udp://:14540", true);
 
 
     // spin node 

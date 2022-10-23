@@ -22,8 +22,7 @@ using namespace std::placeholders;
 
 
 
-
-void RosNode::actuator_control_signals(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg){
+void RosNode::actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg){
     this->mav_node->offboard_actuator_control(msg->steering, msg->throttle);
 }
 
@@ -65,13 +64,12 @@ void RosNode::init()
     this->state_subscription = this->ros_node->get_parameter("subscriptions.state").as_bool();
 
     // binding arming and disarming service to the node
-    rclcpp::Service<vehicle_interfaces::srv::Arm>::SharedPtr arm_disarm_service =
+    this->arm_disarm_service =
         this->ros_node->create_service<vehicle_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2));
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready...");
 
 
-    //
-    this->actuator_subscriber = this->ros_node->create_subscription<vehicle_interfaces::msg::Actuatorsignals>("offboard_actuator_signals", 1, std::bind(&RosNode::testing, this, _1));
+    this->actuator_subscriber = this->ros_node->create_subscription<vehicle_interfaces::msg::Actuatorsignals>("offboard_actuator_signals", 1, std::bind(&RosNode::actuator_control_callback, this, _1));
 
     // setup publishers and subscribers...
     if (state_subscription)

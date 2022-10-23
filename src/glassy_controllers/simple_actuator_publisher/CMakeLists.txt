@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(vehicle_interfaces)
+project(simple_actuator_publisher)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
@@ -17,14 +17,18 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
+find_package(vehicle_interfaces REQUIRED)
+find_package(rclcpp REQUIRED)
+# uncomment the following section in order to fill in
+# further dependencies manually.
+# find_package(<dependency> REQUIRED)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/State.msg"
-  "msg/Actuatorsignals.msg"
-  "srv/Arm.srv"
-)
+add_executable(publisher src/publisher.cpp)
+ament_target_dependencies(publisher rclcpp vehicle_interfaces)
+
+install(TARGETS
+  publisher
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

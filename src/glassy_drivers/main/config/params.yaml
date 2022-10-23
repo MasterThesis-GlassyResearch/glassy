@@ -2,3 +2,8 @@ ros2_communication_node:
   ros__parameters:
     subscriptions:
       state: true
+    data_rates:
+      position: 10
+      odometry: 10
+      attitude: 10 
+

@@ -33,7 +33,11 @@ MavsdkNode::MavsdkNode()
 
 void MavsdkNode::init(std::string port, bool fowarding)
 {
+
+
     (void)fowarding; // for now to prevent warnings
+
+
     std::cout << "Trying to connect to server..." << std::endl;
     mavsdk = std::make_shared<mavsdk::Mavsdk>();
     mavsdk::ConnectionResult connection_result = this->mavsdk->add_any_connection(port);
@@ -49,15 +53,18 @@ void MavsdkNode::init(std::string port, bool fowarding)
 
 
 
-//////////////////////////////////////////////
-//          Service callbacks
-//////////////////////////////////////////////
+/*
+ ------------------------------------------------------------
+ Service Call Backs 
+ -------------------------------------------------------------
+*/
 
 // Arm and Disarm Service Callback
 void MavsdkNode::arm_disarm(int mode) 
 {
+    //check if action has been initialized
     if (!this->action)
-        return; // check if action plugin has been initialized
+        return;
     std::cout << "Arming..." << '\n';
 
     if (mode == 1)
@@ -92,16 +99,19 @@ void MavsdkNode::arm_disarm(int mode)
 //#####################################################################
 
 
-
-//////////////////////////////////////////////
-//     Offboard Mode
-//////////////////////////////////////////////
+/*
+ ------------------------------------------------------------
+ Offboard Mode Handling
+ -------------------------------------------------------------
+*/
 
 
 // ----------- Enter Offboard Mode
 void MavsdkNode::enter_offboard(){
     std::cout<<"Entering Offboard...";
-    this->offboard_actuator_control(0.0, 0.0); //send signal for offboard to be accepted
+    this->actuator_msg.roll_deg = 0.0;
+    this->actuator_msg.thrust_value = 0.0;
+    this->offboard->set_attitude(actuator_msg); //send signal for offboard to be accepted
     mavsdk::Offboard::Result offboard_result = this->offboard->start();
     if (offboard_result != mavsdk::Offboard::Result::Success) {
         std::cerr << "Offboard start failed.... try again" << offboard_result << '\n';
@@ -114,6 +124,9 @@ void MavsdkNode::enter_offboard(){
 // ----------- Publish to vehicle actuator signals
 void MavsdkNode::offboard_actuator_control(float steering_signal, float throttle_signal){
 
+    if(this->telemetry->flight_mode() != mavsdk::Telemetry::FlightMode::Offboard ) this->enter_offboard();
+
+
     this->actuator_msg.roll_deg = steering_signal;
     this->actuator_msg.thrust_value = throttle_signal;
     this->offboard->set_attitude(actuator_msg);
@@ -123,9 +136,13 @@ void MavsdkNode::offboard_actuator_control(float steering_signal, float throttle
 
 
 
-//////////////////////////////////////////////
-//     State Of Vehicle Subscription Callbacks
-//////////////////////////////////////////////
+
+/*
+ ------------------------------------------------------------
+ State Of Vehicle Subscription Callbacks
+ -------------------------------------------------------------
+*/
+
 
 // ------------- Publish Global Position
 void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position){
