@@ -2,6 +2,7 @@
 #include <mavsdk/mavsdk.h>
 #include <mavsdk/plugins/action/action.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
+#include <mavsdk/plugins/manual_control/manual_control.h>
 #include <unistd.h>
 #include <iostream>
 #include <chrono>
@@ -33,10 +34,7 @@ MavsdkNode::MavsdkNode()
 
 void MavsdkNode::init(std::string port, bool fowarding)
 {
-
-
     (void)fowarding; // for now to prevent warnings
-
 
     std::cout << "Trying to connect to server..." << std::endl;
     mavsdk = std::make_shared<mavsdk::Mavsdk>();
@@ -99,6 +97,8 @@ void MavsdkNode::arm_disarm(int mode)
 //#####################################################################
 
 
+
+
 /*
  ------------------------------------------------------------
  Offboard Mode Handling
@@ -122,17 +122,35 @@ void MavsdkNode::enter_offboard(){
 
 
 // ----------- Publish to vehicle actuator signals
-void MavsdkNode::offboard_actuator_control(float steering_signal, float throttle_signal){
+void MavsdkNode::offboard_actuator_control(float yaw, float thrust){
 
-    if(this->telemetry->flight_mode() != mavsdk::Telemetry::FlightMode::Offboard ) this->enter_offboard();
+    if(!this->offboard->is_active() ) this->enter_offboard();
 
 
-    this->actuator_msg.roll_deg = steering_signal;
-    this->actuator_msg.thrust_value = throttle_signal;
+    this->actuator_msg.yaw_deg = yaw;
+    this->actuator_msg.thrust_value = thrust;
     this->offboard->set_attitude(actuator_msg);
-    std::cout<<"sending actuator signals";
-    return;
 }
+
+
+
+
+/*
+ ------------------------------------------------------------
+ Manual Mode Handling
+ -------------------------------------------------------------
+*/
+
+// ----------- Publish to vehicle manual control actuators
+void MavsdkNode::manual_mode_actuator_control(float steering_signal, float throttle_signal){
+
+    const float roll = steering_signal;       // can be made more efficient by passing values directly to function but for now stays like this
+    const float pitch = 0.f;
+    const float yaw = 0.0f;
+    float throttle = throttle_signal;
+    this->manual_control->set_manual_control_input(pitch, roll, throttle, yaw);
+}
+
 
 
 
@@ -156,11 +174,11 @@ void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position){
 }
 
 // ------------- Publish Local Position (NED)
-void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionNed position){
+void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionVelocityNed position_velocity){
 
- this->state_message.north = position.north_m;
- this->state_message.east = position.east_m;
- this->state_message.down = position.down_m;
+ this->state_message.north = position_velocity.position.north_m;
+ this->state_message.east = position_velocity.position.east_m;
+ this->state_message.down = position_velocity.position.down_m;
 
  this->print_state();
 
@@ -213,7 +231,7 @@ void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles){
 
 //print current state information
 void MavsdkNode::print_state(){
-
+    return;
  std::cout<< "Velocity:" << std::endl;
  std::cout<< "  surge ="<< this->state_message.surge_velocity << std::endl;
  std::cout<< "  sway  ="<< this->state_message.sway_velocity << std::endl;
@@ -274,6 +292,7 @@ void MavsdkNode::initialize_system(){
     this->telemetry = std::make_shared<mavsdk::Telemetry>(system);
     this->offboard = std::make_shared<mavsdk::Offboard>(system);
     this->action = std::make_shared<mavsdk::Action>(system);
+    this->manual_control = std::make_shared<mavsdk::ManualControl>(system);
 
 
 
@@ -300,6 +319,7 @@ void MavsdkNode::initialize_system(){
     }
 
     this->telemetry->subscribe_position(std::bind(&MavsdkNode::publish_global_position, this, _1));
+    this->telemetry->subscribe_position_velocity_ned(std::bind(&MavsdkNode::publish_ned_position, this, _1));
     this->telemetry->subscribe_odometry(std::bind(&MavsdkNode::publish_odometry, this, _1));
     this->telemetry->subscribe_attitude_euler(std::bind(&MavsdkNode::publish_attitude, this, _1));
 

@@ -6,6 +6,7 @@
 #include <mavsdk/plugins/action/action.h>
 #include <mavsdk/plugins/offboard/offboard.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
+#include <mavsdk/plugins/manual_control/manual_control.h>
 #include <vehicle_interfaces/msg/state.hpp>
 #include <iostream>
 #include <chrono>
@@ -32,7 +33,7 @@ private:
     void publish_global_position(mavsdk::Telemetry::Position position);
     void publish_odometry(mavsdk::Telemetry::Odometry odometry);
     void publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles);
-    void publish_ned_position(mavsdk::Telemetry::PositionNed position);
+    void publish_ned_position(mavsdk::Telemetry::PositionVelocityNed position_velocity);
 
     // messages
     vehicle_interfaces::msg::State state_message;
@@ -43,6 +44,7 @@ private:
     std::shared_ptr<mavsdk::Telemetry> telemetry;
     std::shared_ptr<mavsdk::Action> action;
     std::shared_ptr<mavsdk::Offboard> offboard;
+    std::shared_ptr<mavsdk::ManualControl> manual_control;
     
 
     
@@ -66,6 +68,10 @@ public:
     mavsdk::Offboard::Attitude actuator_msg{};
     void offboard_actuator_control(float steering_signal, float throttle_signal);
     void enter_offboard();
+
+
+    //Manual Mode
+    void manual_mode_actuator_control(float steering_signal, float throttle_signal);
 };
 
 #endif

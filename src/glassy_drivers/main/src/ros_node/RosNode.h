@@ -36,7 +36,7 @@ public:
 
     // subscribers
     rclcpp::Subscription<vehicle_interfaces::msg::Actuatorsignals>::SharedPtr actuator_subscriber;
-    void actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg);
+    void manual_actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg);
 
     // publishers
     rclcpp::Publisher<vehicle_interfaces::msg::State>::SharedPtr state_publisher;

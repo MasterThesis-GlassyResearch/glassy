@@ -7,10 +7,6 @@
 #include <future>
 #include "rclcpp/rclcpp.hpp"
 #include "vehicle_interfaces/srv/arm.hpp"
-#include "vehicle_interfaces/msg/test.hpp"
-#include "vehicle_interfaces/msg/globalpos.hpp"
-#include "vehicle_interfaces/msg/nedpos.hpp"
-#include "vehicle_interfaces/msg/attitude.hpp"
 #include "vehicle_interfaces/msg/actuatorsignals.hpp"
 
 
@@ -22,8 +18,8 @@ using namespace std::placeholders;
 
 
 
-void RosNode::actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg){
-    this->mav_node->offboard_actuator_control(msg->steering, msg->throttle);
+void RosNode::manual_actuator_control_callback(const vehicle_interfaces::msg::Actuatorsignals::SharedPtr msg){
+    this->mav_node->manual_mode_actuator_control(msg->steering, msg->throttle);
 }
 
 
@@ -69,7 +65,7 @@ void RosNode::init()
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready...");
 
 
-    this->actuator_subscriber = this->ros_node->create_subscription<vehicle_interfaces::msg::Actuatorsignals>("offboard_actuator_signals", 1, std::bind(&RosNode::actuator_control_callback, this, _1));
+    this->actuator_subscriber = this->ros_node->create_subscription<vehicle_interfaces::msg::Actuatorsignals>("offboard_actuator_signals", 1, std::bind(&RosNode::manual_actuator_control_callback, this, _1));
 
     // setup publishers and subscribers...
     if (state_subscription)
