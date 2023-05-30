@@ -1,0 +1,17 @@
+glassy_main_node:
+  ros__parameters:
+    publishers:
+      state: true
+      battery: false
+    subscriptions:
+      offboard_attitude: true
+      offboard_attitude_rate: false
+      manual_control: false
+    data_rates:
+      position: 10
+      odometry: 10
+      attitude: 10 
+
+    
+    
+

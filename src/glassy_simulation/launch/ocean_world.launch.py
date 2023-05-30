@@ -12,10 +12,11 @@ def generate_launch_description():
     
     # Get the PX4 location 
     PX4_DIR = os.environ.get('PX4_DIR')
+
     
     # Get the gazebo package directory
     gazebo_launch_dir = os.path.join(get_package_share_directory('gazebo_ros'), 'launch')
-    world = os.path.join(PX4_DIR, 'Tools/sitl_gazebo/worlds/ocean.world')
+    world = os.path.join(PX4_DIR, 'Tools/simulation/gazebo-classic/sitl_gazebo-classic/worlds/ocean.world')
 
     return LaunchDescription([
         

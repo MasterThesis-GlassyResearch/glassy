@@ -1,0 +1,8 @@
+glassy_joy_node:
+  ros__parameters:
+    mapping:
+      thrust: 1
+      steering: 2
+      arm: 1
+      disarm: 2
+
