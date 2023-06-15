@@ -1,9 +1,9 @@
-/build
-/install
-/log
+**/build
+**/install
+**/log
 src/glassy_drivers/main/.vscode/settings.json
 src/glassy_drivers/main/.vscode/c_cpp_properties.json
 .vscode
 **/.vscode
-src/glassy_manual_control/joystick_ros2
+#src/glassy_manual_control/joystick_ros2
 
