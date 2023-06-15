@@ -119,7 +119,6 @@ void MavsdkNode::arm_disarm(int mode)
 
 // ----------- Enter Offboard Mode
 void MavsdkNode::enter_offboard(int mode){
-
     std::cout<<"Entering Offboard...";
 
     //enter off board using set attitude
@@ -138,9 +137,22 @@ void MavsdkNode::enter_offboard(int mode){
     mavsdk::Offboard::Result offboard_result = this->offboard->start();
     if (offboard_result != mavsdk::Offboard::Result::Success) {
         std::cerr << "Offboard start failed.... try again" << offboard_result << '\n';
+    } else{
+        std::cout << "Offboard started\n";
     }
-    std::cout << "Offboard started\n";
     return;
+}
+
+// Leave offboard mode
+void MavsdkNode::stop_offboard(){
+        //Stop offboard mode
+    mavsdk::Offboard::Result offboard_result = this->offboard->stop();
+    if (offboard_result != mavsdk::Offboard::Result::Success) {
+            std::cerr << "Offboard::stop() failed: " << offboard_result << '\n';
+    }
+    else{
+        std::cout << "Exited Offboard Mode Successfully\n";
+    }
 }
 
 

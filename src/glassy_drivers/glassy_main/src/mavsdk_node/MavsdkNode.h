@@ -70,6 +70,7 @@ public:
     void offboard_direct_control(float steering_signal, float throttle_signal);
     void offboard_attitude_rate_control(float steering_signal, float throttle_signal);
     void enter_offboard(int mode);
+    void stop_offboard();
 
 
     //Manual Mode

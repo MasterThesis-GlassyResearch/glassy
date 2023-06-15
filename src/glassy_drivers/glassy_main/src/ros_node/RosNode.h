@@ -24,6 +24,7 @@ class RosNode
 private:
     // service and subscriber callbacks
     void arm_disarm(const std::shared_ptr<glassy_interfaces::srv::Arm::Request> request, std::shared_ptr<glassy_interfaces::srv::Arm::Response> response);
+    void offboard_start_stop(const std::shared_ptr<glassy_interfaces::srv::Arm::Request> request, std::shared_ptr<glassy_interfaces::srv::Arm::Response> response);
 
 public:
     RosNode(std::shared_ptr<rclcpp::Node> node);
@@ -35,6 +36,7 @@ public:
 
     //services
     rclcpp::Service<glassy_interfaces::srv::Arm>::SharedPtr arm_disarm_service;
+    rclcpp::Service<glassy_interfaces::srv::Arm>::SharedPtr offboard_start_stop_service;
 
     // subscribers
     rclcpp::Subscription<glassy_interfaces::msg::Manualactuatorsignals>::SharedPtr manual_actuator_subscriber;

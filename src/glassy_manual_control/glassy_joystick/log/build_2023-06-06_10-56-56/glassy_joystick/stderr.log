@@ -1,0 +1,23 @@
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp: In member function ‘void JoyControlNode::direct_actuator_publish(float, float)’:
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:23:52: warning: unused parameter ‘thrust’ [-Wunused-parameter]
+   23 | void JoyControlNode::direct_actuator_publish(float thrust, float rudder){
+      |                                              ~~~~~~^~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:23:66: warning: unused parameter ‘rudder’ [-Wunused-parameter]
+   23 | void JoyControlNode::direct_actuator_publish(float thrust, float rudder){
+      |                                                            ~~~~~~^~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp: In member function ‘void JoyControlNode::joystick_subscription_callback(sensor_msgs::msg::Joy_<std::allocator<void> >::SharedPtr)’:
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:31:9: warning: unused variable ‘thrust_axis_index’ [-Wunused-variable]
+   31 |     int thrust_axis_index = 1;
+      |         ^~~~~~~~~~~~~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:32:9: warning: unused variable ‘rudder_axis_index’ [-Wunused-variable]
+   32 |     int rudder_axis_index = 2;
+      |         ^~~~~~~~~~~~~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:33:9: warning: unused variable ‘arm_button_index’ [-Wunused-variable]
+   33 |     int arm_button_index = 10;
+      |         ^~~~~~~~~~~~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:34:9: warning: unused variable ‘disarm_button_index’ [-Wunused-variable]
+   34 |     int disarm_button_index = 9;
+      |         ^~~~~~~~~~~~~~~~~~~
+/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:29:92: warning: unused parameter ‘msg’ [-Wunused-parameter]
+   29 | void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy::SharedPtr msg){
+      |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~

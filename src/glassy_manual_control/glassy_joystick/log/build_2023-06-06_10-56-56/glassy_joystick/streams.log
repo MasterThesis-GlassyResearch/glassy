@@ -1,0 +1,102 @@
+[0.025s] Invoking command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control -DCMAKE_INSTALL_PREFIX=/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick
+[0.211s] -- The C compiler identification is GNU 9.4.0
+[0.376s] -- The CXX compiler identification is GNU 9.4.0
+[0.385s] -- Check for working C compiler: /usr/lib/ccache/cc
+[0.493s] -- Check for working C compiler: /usr/lib/ccache/cc -- works
+[0.495s] -- Detecting C compiler ABI info
+[0.578s] -- Detecting C compiler ABI info - done
+[0.592s] -- Detecting C compile features
+[0.592s] -- Detecting C compile features - done
+[0.596s] -- Check for working CXX compiler: /usr/lib/ccache/c++
+[0.705s] -- Check for working CXX compiler: /usr/lib/ccache/c++ -- works
+[0.706s] -- Detecting CXX compiler ABI info
+[0.794s] -- Detecting CXX compiler ABI info - done
+[0.813s] -- Detecting CXX compile features
+[0.814s] -- Detecting CXX compile features - done
+[0.819s] -- Found ament_cmake: 0.9.11 (/opt/ros/foxy/share/ament_cmake/cmake)
+[0.887s] -- Found PythonInterp: /home/joaolehodey/miniconda3/bin/python3 (found suitable version "3.9.12", minimum required is "3") 
+[0.887s] -- Using PYTHON_EXECUTABLE: /home/joaolehodey/miniconda3/bin/python3
+[1.232s] -- Found sensor_msgs: 2.0.5 (/opt/ros/foxy/share/sensor_msgs/cmake)
+[1.277s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.286s] -- Found rosidl_adapter: 1.3.0 (/opt/ros/foxy/share/rosidl_adapter/cmake)
+[1.428s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "1.1.1f")  
+[1.478s] -- Found FastRTPS: /opt/ros/foxy/include  
+[1.606s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.816s] -- Found rclcpp: 2.4.2 (/opt/ros/foxy/share/rclcpp/cmake)
+[1.884s] -- Found rmw_implementation_cmake: 1.0.4 (/opt/ros/foxy/share/rmw_implementation_cmake/cmake)
+[1.886s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[1.888s] -- Looking for pthread.h
+[1.991s] -- Looking for pthread.h - found
+[1.991s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[2.098s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+[2.098s] -- Looking for pthread_create in pthreads
+[2.161s] -- Looking for pthread_create in pthreads - not found
+[2.161s] -- Looking for pthread_create in pthread
+[2.237s] -- Looking for pthread_create in pthread - found
+[2.239s] -- Found Threads: TRUE  
+[2.437s] -- Found glassy_interfaces: 0.0.0 (/home/joaolehodey/glassy_ws/install/glassy_interfaces/share/glassy_interfaces/cmake)
+[2.453s] -- Found ament_lint_auto: 0.9.8 (/opt/ros/foxy/share/ament_lint_auto/cmake)
+[2.591s] -- Added test 'copyright' to check source files copyright and LICENSE
+[2.598s] -- Added test 'cppcheck' to perform static code analysis on C / C++ code
+[2.598s] -- Configured cppcheck include dirs: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node
+[2.598s] -- Configured cppcheck exclude dirs and/or files: 
+[2.605s] -- Added test 'cpplint' to check C / C++ code against the Google style
+[2.605s] -- Configured cpplint exclude dirs and/or files: 
+[2.608s] -- Added test 'lint_cmake' to check CMake code style
+[2.616s] -- Added test 'uncrustify' to check C / C++ code style
+[2.616s] -- Configured uncrustify additional arguments: 
+[2.618s] -- Added test 'xmllint' to check XML markup files
+[2.623s] -- Configuring done
+[2.634s] -- Generating done
+[2.636s] -- Build files have been written to: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick
+[2.647s] Invoked command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick' returned '0': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control -DCMAKE_INSTALL_PREFIX=/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick
+[2.651s] Invoking command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake --build /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick -- -j8 -l8
+[2.704s] [35m[1mScanning dependencies of target glassy_joystick[0m
+[2.760s] [ 66%] [32mBuilding CXX object CMakeFiles/glassy_joystick.dir/src/glassy_joystick_main.cpp.o[0m
+[2.760s] [ 66%] [32mBuilding CXX object CMakeFiles/glassy_joystick.dir/src/joy_ctrl_node/JoyControlNode.cpp.o[0m
+[2.789s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp: In member function ‘void JoyControlNode::direct_actuator_publish(float, float)’:
+[2.789s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:23:52: warning: unused parameter ‘thrust’ [-Wunused-parameter]
+[2.789s]    23 | void JoyControlNode::direct_actuator_publish(float thrust, float rudder){
+[2.789s]       |                                              ~~~~~~^~~~~~
+[2.789s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:23:66: warning: unused parameter ‘rudder’ [-Wunused-parameter]
+[2.790s]    23 | void JoyControlNode::direct_actuator_publish(float thrust, float rudder){
+[2.790s]       |                                                            ~~~~~~^~~~~~
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp: In member function ‘void JoyControlNode::joystick_subscription_callback(sensor_msgs::msg::Joy_<std::allocator<void> >::SharedPtr)’:
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:31:9: warning: unused variable ‘thrust_axis_index’ [-Wunused-variable]
+[2.790s]    31 |     int thrust_axis_index = 1;
+[2.790s]       |         ^~~~~~~~~~~~~~~~~
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:32:9: warning: unused variable ‘rudder_axis_index’ [-Wunused-variable]
+[2.790s]    32 |     int rudder_axis_index = 2;
+[2.790s]       |         ^~~~~~~~~~~~~~~~~
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:33:9: warning: unused variable ‘arm_button_index’ [-Wunused-variable]
+[2.790s]    33 |     int arm_button_index = 10;
+[2.790s]       |         ^~~~~~~~~~~~~~~~
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:34:9: warning: unused variable ‘disarm_button_index’ [-Wunused-variable]
+[2.790s]    34 |     int disarm_button_index = 9;
+[2.790s]       |         ^~~~~~~~~~~~~~~~~~~
+[2.790s] /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/src/joy_ctrl_node/JoyControlNode.cpp:29:92: warning: unused parameter ‘msg’ [-Wunused-parameter]
+[2.791s]    29 | void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy::SharedPtr msg){
+[2.791s]       |                                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+[2.990s] [100%] [32m[1mLinking CXX executable glassy_joystick[0m
+[3.392s] [100%] Built target glassy_joystick
+[3.407s] Invoked command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick' returned '0': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake --build /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick -- -j8 -l8
+[3.457s] Invoking command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake --install /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick
+[3.467s] -- Install configuration: ""
+[3.468s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/lib/glassy_joystick/glassy_joystick
+[3.470s] -- Set runtime path of "/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/lib/glassy_joystick/glassy_joystick" to ""
+[3.471s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/ament_index/resource_index/package_run_dependencies/glassy_joystick
+[3.471s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/ament_index/resource_index/parent_prefix_path/glassy_joystick
+[3.471s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/environment/ament_prefix_path.sh
+[3.471s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/environment/ament_prefix_path.dsv
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/environment/path.sh
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/environment/path.dsv
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/local_setup.bash
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/local_setup.sh
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/local_setup.zsh
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/local_setup.dsv
+[3.472s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/package.dsv
+[3.473s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/ament_index/resource_index/packages/glassy_joystick
+[3.473s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/cmake/glassy_joystickConfig.cmake
+[3.473s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/cmake/glassy_joystickConfig-version.cmake
+[3.473s] -- Installing: /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/install/glassy_joystick/share/glassy_joystick/package.xml
+[3.476s] Invoked command in '/home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick' returned '0': CMAKE_PREFIX_PATH=/home/joaolehodey/glassy_ws/install/glassy_simulation:/home/joaolehodey/glassy_ws/install/glassy_main:/home/joaolehodey/glassy_ws/install/glassy_joystick:/home/joaolehodey/glassy_ws/install/glassy_interfaces:/home/joaolehodey/glassy_ws/install/joystick_ros2:/opt/ros/foxy:/opt/ros/noetic CONDA_PROMPT_MODIFIER=(base) /usr/bin/cmake --install /home/joaolehodey/glassy_ws/src/glassy_manual_control/glassy_joy_control/build/glassy_joystick

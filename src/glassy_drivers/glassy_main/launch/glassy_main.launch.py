@@ -6,9 +6,9 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package='main',
-            namespace='main1',
-            executable='main',
+            package='glassy_main',
+            namespace='glassy',
+            executable='glassy_main',
             name='main'
         ),
     ])

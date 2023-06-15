@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+a0d5a5f4f0f5d81abfd8989902d91838 CMakeFiles/glassy_joystick_uninstall
