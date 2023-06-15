@@ -33,17 +33,22 @@ private:
     int arm_button_index = 10;
     int disarm_button_index = 9;
 
-    
-    std::vector<int> thrust_mapping{0,1};
-    std::vector<int> steering_mapping{0,2};
-    std::vector<int> arm_mapping{1, 0};
-    std::vector<int> disarm_mapping{1, 2};
-    std::vector<int> start_offboard_mapping{1,3};
-    std::vector<int> stop_offboard_mapping{1,4};
-    std::vector<int> const_val_increase_mapping{0,7};
-    std::vector<int> const_val_decrease_mapping{0,7};
-    std::vector<int> step_increase_mapping{0,6};
-    std::vector<int> step_decrease_mapping{0,6};
+    // parameters that define the mapping between functions and actuations
+    int thrust_mapping;
+    int steering_mapping; 
+    int arm_mapping;        
+    int disarm_mapping;
+    int start_offboard_mapping;
+    int stop_offboard_mapping;
+    std::vector<long int> const_val_increase_mapping{0,7};
+    std::vector<long int> const_val_decrease_mapping{0,7};
+    std::vector<long int> step_increase_mapping{0,6};
+    std::vector<long int> step_decrease_mapping{0,6};
+
+    mode joystick_mode = FULL_CONTROL;
+
+
+    // values initialized so that they are not 
 
 public:
 
@@ -67,14 +72,18 @@ public:
     //client, will intercact with the arm/ disarm service
     rclcpp::Client<glassy_interfaces::srv::Arm>::SharedPtr arm_disarm_client;
 
-    void init();
+    // create request variables for service
+    std::shared_ptr<glassy_interfaces::srv::Arm::Request> arm_request = std::make_shared<glassy_interfaces::srv::Arm::Request>();
+    std::shared_ptr<glassy_interfaces::srv::Arm::Request> offboard_request = std::make_shared<glassy_interfaces::srv::Arm::Request>();
 
-    mode joystick_mode = FULL_CONTROL;
+    //client, will intercact with the start/stop offboard service
+    rclcpp::Client<glassy_interfaces::srv::Arm>::SharedPtr start_stop_offboard_client;
+
+    void init();
 
 
     // if false, other sources can publish, this avoids conflicts
     bool direct_actuator_publishing;
-
 
 };
 
