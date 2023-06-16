@@ -21,15 +21,28 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(std_msgs REQUIRED)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
+
+# rosidl_generate_interfaces(${PROJECT_NAME}
+# )
+
+set(msg_files
   "msg/State.msg"
   "msg/Manualactuatorsignals.msg"
   "msg/Offboarddirectcontrol.msg"
   "msg/Offboardattituderate.msg"
-  "srv/Arm.srv"
-)
+  )
 
+set(srv_files
+   "srv/Arm.srv"
+  )
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  DEPENDENCIES std_msgs
+)
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights

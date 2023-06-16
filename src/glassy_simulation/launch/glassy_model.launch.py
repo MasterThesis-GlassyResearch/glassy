@@ -14,7 +14,7 @@ def generate_launch_description():
     """Launch Gazebo with a boat running PX4"""
     
     # Define the model to launch
-    vehicle_model = 'glassy_boat'
+    vehicle_model = 'glassy'
     
     # --------------------------------
     # PX4 and Gazebo model directories
@@ -99,7 +99,7 @@ def generate_launch_description():
         # Define the environment variables so that gazebo can discover PX4 3D models and plugins
         SetEnvironmentVariable('GAZEBO_PLUGIN_PATH', PX4_DIR + '/build/px4_sitl_default/build_gazebo'),
         SetEnvironmentVariable('GAZEBO_MODEL_PATH', PX4_DIR + '/Tools/sitl_gazebo/models'),
-        SetEnvironmentVariable('PX4_SIM_MODEL', 'boat'),
+        SetEnvironmentVariable('PX4_SIM_MODEL', 'glassy'),
 
         # Define where to spawn the vehicle (in the inertial frame) 
         DeclareLaunchArgument('vehicle_id', default_value=str(default_vehicle_id), description='Vehicle ID in the network'),

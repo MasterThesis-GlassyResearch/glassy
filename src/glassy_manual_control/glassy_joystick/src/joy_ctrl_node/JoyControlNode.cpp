@@ -22,6 +22,7 @@ JoyControlNode::JoyControlNode(std::shared_ptr<rclcpp::Node> node): joy_glassy_n
 void JoyControlNode::direct_actuator_publish(){
     this->direct_actuator_msg.rudder = this->rudder_value;
     this->direct_actuator_msg.thrust = this->thrust_value;
+    this->direct_actuator_msg.header.stamp = this->joy_glassy_node->get_clock()->now();
 
     this->glassy_interface_publisher->publish(this->direct_actuator_msg);
 }   

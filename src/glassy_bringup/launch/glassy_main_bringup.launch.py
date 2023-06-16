@@ -8,7 +8,7 @@ def generate_launch_description():
         Node(
             package='glassy_joystick',
             namespace='glassy',
-            executable='glassy_joystick_main',
+            executable='glassy_joystick',
             name='glassy_joystick'
         ),
         Node(
