@@ -160,8 +160,6 @@ void MavsdkNode::stop_offboard()
 void MavsdkNode::offboard_direct_control(float yaw, float thrust)
 {
 
-    // if(!this->offboard->is_active() ) this->enter_offboard(1);
-
     this->direct_control_msg.yaw_deg = yaw;
     this->direct_control_msg.thrust_value = thrust;
     this->offboard->set_attitude(this->direct_control_msg);
@@ -170,8 +168,6 @@ void MavsdkNode::offboard_direct_control(float yaw, float thrust)
 // ----------- Publish to attitude rate setpoints and thrust
 void MavsdkNode::offboard_attitude_rate_control(float yaw_rate, float thrust)
 {
-
-    // if(!this->offboard->is_active() ) this->enter_offboard(2);
 
     this->attitude_rate_msg.yaw_deg_s = yaw_rate;
     this->attitude_rate_msg.thrust_value = thrust;
