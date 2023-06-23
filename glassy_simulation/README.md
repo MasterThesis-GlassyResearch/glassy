@@ -1,0 +1,3 @@
+This package contains the launch files to launch vehicles that are defined in a PX4-Autopilot repository, must define root of PX4 directory, ...
+
+// TODO: Add explanation

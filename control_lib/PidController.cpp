@@ -1,5 +1,8 @@
 #include <PidController.h>
 
+// TODO: FINiSH - NOT FINISHED, STARTED BUT DIDNT COMPLETE IT ---
+//------------------------------------------------
+
 /*-------------------------
     Public Methods
 --------------------------*/
@@ -48,7 +51,7 @@ float PidController::computeOutput(float current_val, float ref_val, float durat
 
     // compute proportional action
     float Pterm = error*this->p_gain;
-    float Iterm = error*this->p_gain;
+    float Iterm = this->integral*this->i_gain;
     float Dterm = (error-this->prev_error)/duration;
 
     float output = Pterm+Iterm+Dterm;
