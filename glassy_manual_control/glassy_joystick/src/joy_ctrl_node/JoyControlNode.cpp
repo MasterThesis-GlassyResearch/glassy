@@ -9,6 +9,7 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <stdlib.h>
 
 using namespace std::placeholders;
 
@@ -27,8 +28,7 @@ void JoyControlNode::direct_actuator_publish(){
     this->glassy_interface_publisher->publish(this->direct_actuator_msg);
 }   
 
-
-
+// FIXME -> Test all of the functionalities as soon as possible
 void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy::SharedPtr msg){
 
     // if any control given to the joystick, publish direct controls
@@ -68,6 +68,54 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
         this->start_stop_offboard_client->async_send_request(this->offboard_request);
     }
 
+
+    // check for increases in the constant value
+    if(msg->axes[this->const_val_inc_dec_mapping]==1){
+        if(this->joystick_mode==THRUST_ONLY){
+            this->rudder_value+=this->increments_const_val;
+            this->rudder_value= std::min(this->rudder_value, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Value = "+ std::to_string(this->rudder_value));
+        }
+        else if(this->joystick_mode==RUDDER_ONLY){
+            this->thrust_value+=this->increments_const_val;
+            this->thrust_value= std::min(this->thrust_value, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
+        }
+    }
+    // check for decreses in the constant value
+    else if(msg->axes[this->const_val_inc_dec_mapping]==-1){
+        if(this->joystick_mode==THRUST_ONLY){
+            this->rudder_value-=this->increments_const_val;
+            this->rudder_value= std::max(this->rudder_value, -1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Value = "+ std::to_string(this->rudder_value));
+        }
+        else if(this->joystick_mode==RUDDER_ONLY){
+            this->thrust_value-=this->increments_const_val;
+            this->thrust_value= std::max(this->thrust_value, 0.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
+        }
+    }
+    // check increases in the step value
+    else if(msg->axes[this->step_inc_dec_mapping]==1){
+        this->increments_const_val+=this->increments_on_step;
+        this->increments_const_val = std::min(this->max_increment_value, this->increments_const_val);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+    }
+    // check decreases in the step value
+    else if(msg->axes[this->step_inc_dec_mapping]==-1){
+        this->increments_const_val-=this->increments_on_step;
+        this->increments_const_val = std::max(this->increments_on_step, this->increments_const_val);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+    }
+    else if(msg->buttons[this->toogle_mode_mapping]){
+        this->next_mode_index = (this->next_mode_index+1)%this->nmr_modes;
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode To Change to -> "+ this->list_modes_names[this->next_mode_index]);
+    }
+    else if(msg->buttons[this->enter_mode_mapping]){
+        this->change_mode(this->list_modes[this->next_mode_index]);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode Entered -> "+ this->list_modes_names[this->next_mode_index]);
+    } 
+
 }
 
 
@@ -79,29 +127,31 @@ void JoyControlNode::change_mode(mode new_mode){
     this->thrust_value = 0.0;
 }
 
+
 // for now a simple initialization, parameters may be added in the future
 void JoyControlNode::init(){
 
     // ---------------------------------------------------------------------
-    //  get the necessary parameters from yaml file -> DEFAULT FOR PS4 
-    //  [ x, y]
-    //  if x = 1 -> button, if = 0 -> axis
-    //  y = number of button/ axis 
+    //  get the necessary parameters from yaml file -> DEFAULT FOR PS4 Controller
     // ----------------------------------------------------------------------
     this->joy_glassy_node->declare_parameter("mapping.axes.thrust", 1);
     this->joy_glassy_node->declare_parameter("mapping.axes.steering", 2);
+    this->joy_glassy_node->declare_parameter("mapping.axes.const_val_increase_decrease", 6);
+    this->joy_glassy_node->declare_parameter("mapping.axes.step_increase_decrease", 7);
 
     this->joy_glassy_node->declare_parameter("mapping.buttons.arm", 0);
     this->joy_glassy_node->declare_parameter("mapping.buttons.disarm", 2);
     this->joy_glassy_node->declare_parameter("mapping.buttons.start_offboard", 3);
     this->joy_glassy_node->declare_parameter("mapping.buttons.stop_offboard", 4);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.enter_mode", 6);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.toogle_mode", 7);
 
-    // this->joy_glassy_node->declare_parameter("mapping.others.const_val_increase", std::vector<int>{1,3});
-    // this->joy_glassy_node->declare_parameter("mapping.others.const_val_decrease", std::vector<int>{1,4});
-    // this->joy_glassy_node->declare_parameter("mapping.others.step_increase", std::vector<int>{0,1});
-    // this->joy_glassy_node->declare_parameter("mapping.others.step_decrease", std::vector<int>{0,1});
+    this->joy_glassy_node->declare_parameter("initial.const_step_value", 0.05);
+    this->joy_glassy_node->declare_parameter("initial.step_inc_dec", 0.01);
+    this->joy_glassy_node->declare_parameter("initial.max_const_step_val", 0.15);
 
-    // get all the parameters
+
+    // Initialize all the parameters
     this->thrust_mapping = this->joy_glassy_node->get_parameter("mapping.axes.thrust").as_int();
     this->steering_mapping = this->joy_glassy_node->get_parameter("mapping.axes.steering").as_int();
     this->arm_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.arm").as_int();
@@ -109,10 +159,17 @@ void JoyControlNode::init(){
     this->start_offboard_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.start_offboard").as_int();
     this->stop_offboard_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.stop_offboard").as_int();
 
-    // this->const_val_increase_mapping = this->joy_glassy_node->get_parameter("mapping.start_offboard").as_integer_array();
-    // this->const_val_decrease_mapping = this->joy_glassy_node->get_parameter("mapping.stop_offboard").as_integer_array();
-    // this->step_increase_mapping = this->joy_glassy_node->get_parameter("mapping.step_increase").as_integer_array();
-    // this->step_decrease_mapping = this->joy_glassy_node->get_parameter("mapping.step_decrease").as_integer_array();
+    this->const_val_inc_dec_mapping = this->joy_glassy_node->get_parameter("mapping.axes.const_val_increase_decrease").as_int();
+    this->step_inc_dec_mapping = this->joy_glassy_node->get_parameter("mapping.axes.step_increase_decrease").as_int();
+
+    this->increments_const_val = this->joy_glassy_node->get_parameter("initial.const_step_value").as_double();
+    this->increments_on_step = this->joy_glassy_node->get_parameter("initial.step_inc_dec").as_double();
+    this->max_increment_value = this->joy_glassy_node->get_parameter("initial.max_const_step_val").as_double();
+
+    this->enter_mode_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.enter_mode").as_int();
+    this->toogle_mode_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.toogle_mode").as_int();
+
+    this->nmr_modes = this->list_modes.size();
 
 
 

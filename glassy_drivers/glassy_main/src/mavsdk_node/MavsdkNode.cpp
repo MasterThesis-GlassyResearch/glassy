@@ -30,6 +30,8 @@ MavsdkNode::MavsdkNode()
     std::cout << "contructing mavsdk_node...\n";
 }
 
+
+// FIXME IMPORTANT, -> NEED TO ADD A CONFIG FILE AND STUFF TO CONNECT TO EITHER REAL SYSTEM OR SIMULATION
 void MavsdkNode::init(std::string port, bool forwarding)
 {
     // (void)forwarding; // for now to prevent warnings
@@ -300,11 +302,11 @@ std::shared_ptr<mavsdk::System> MavsdkNode::get_system()
         auto system = this->mavsdk->systems().back();
 
         if (system->has_autopilot()) {
+            prom.set_value(system);
             std::cout << "Discovered autopilot\n";
 
             // Unsubscribe again as we only want to find one system.
             this->mavsdk->subscribe_on_new_system(nullptr);
-            prom.set_value(system);
             this->initialize_system();
 
         } });

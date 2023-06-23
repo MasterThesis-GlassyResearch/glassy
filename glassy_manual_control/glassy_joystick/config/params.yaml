@@ -4,16 +4,20 @@ glassy_joy_node:
       axes:
         thrust: 1
         steering: 2
+        const_val_increase_decrease: 7
+        step_increase_decrease: 6
       buttons:
         arm: 0
         disarm: 2
         start_offboard: 3
         stop_offboard: 4
-      others:
-        const_val_increase: [0,7]
-        const_val_decrease: [0,7]
-        step_increase: [0,6]
-        step.decrease: [0,6]
+        enter_mode: 
+        toogle_mode:
+    initial:
+      const_step_value: 0.05
+      step_inc_dec: 0.01
+      max_const_step_val: 0.15
+
 
       
 

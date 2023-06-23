@@ -21,17 +21,14 @@ private:
     float rudder_value = 0;
     float thrust_value = 0;  
 
-    float rudder_increments = 0.1;
-    float thrust_increments = 0.1;
+    float increments_const_val;
+    float increments_on_step;
+    float max_increment_value;
 
     void direct_actuator_publish();
     void change_mode(mode new_mode);
 
-    // define buttons and axis needed
-    int thrust_axis_index = 1;
-    int rudder_axis_index = 2;
-    int arm_button_index = 10;
-    int disarm_button_index = 9;
+
 
     // parameters that define the mapping between functions and actuations
     int thrust_mapping;
@@ -40,12 +37,21 @@ private:
     int disarm_mapping;
     int start_offboard_mapping;
     int stop_offboard_mapping;
-    std::vector<long int> const_val_increase_mapping{0,7};
-    std::vector<long int> const_val_decrease_mapping{0,7};
-    std::vector<long int> step_increase_mapping{0,6};
-    std::vector<long int> step_decrease_mapping{0,6};
+    int const_val_inc_dec_mapping;
+    int step_inc_dec_mapping;
+
+    int toogle_mode_mapping;
+    int enter_mode_mapping;
+
+    // whether the extra functions are buttons or axis
+    int extra_type;
 
     mode joystick_mode = FULL_CONTROL;
+    int next_mode_index = 0;
+
+    std::vector<mode> list_modes{FULL_CONTROL, RUDDER_ONLY, THRUST_ONLY, NO_CONTROL};
+    std::vector<std::string> list_modes_names{"FULL_CONTROL", "RUDDER_ONLY", "THRUST_ONLY", "NO_CONTROL"};
+    int nmr_modes = 4;
 
 
     // values initialized so that they are not 
