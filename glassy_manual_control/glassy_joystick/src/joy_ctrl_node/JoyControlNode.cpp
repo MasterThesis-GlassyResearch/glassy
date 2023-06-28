@@ -19,6 +19,11 @@ JoyControlNode::JoyControlNode(std::shared_ptr<rclcpp::Node> node): joy_glassy_n
     std::cout<<"Creating Joystic Controller Node...\n";
 }
 
+void JoyControlNode::keep_track_button_pressed(int* new_button, int new_val){
+    *(this->last_pressed_btn) = 0;
+    this->last_pressed_btn = new_button;
+    *(this->last_pressed_btn) = new_val;
+}
 
 void JoyControlNode::direct_actuator_publish(){
     this->direct_actuator_msg.rudder = this->rudder_value;
@@ -28,7 +33,7 @@ void JoyControlNode::direct_actuator_publish(){
     this->glassy_interface_publisher->publish(this->direct_actuator_msg);
 }   
 
-// FIXME -> Test all of the functionalities as soon as possible
+
 void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy::SharedPtr msg){
 
     // if any control given to the joystick, publish direct controls
@@ -39,38 +44,55 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
             this->thrust_value = msg->axes[this->thrust_mapping]; 
         }
         else if(this->joystick_mode==RUDDER_ONLY){
-            this->rudder_value = msg->axes[this->steering_mapping];
+            this->rudder_value = -msg->axes[this->steering_mapping];
         } 
         else{
-            this->rudder_value = msg->axes[this->steering_mapping];
+            this->rudder_value = -msg->axes[this->steering_mapping];
             this->thrust_value = msg->axes[this->thrust_mapping];
         }
-            this->direct_actuator_publish();
+        this->direct_actuator_publish();
     }
+
 
     // check if either disarm pressed or armed pressed
     if(msg->buttons[this->disarm_mapping]==1){
+        if(this->disarm_previous_value!=0) return;
         this->arm_request->mode = 0; 
         this->arm_disarm_client->async_send_request(this->arm_request);
-    }
-    else if(msg->buttons[this->arm_mapping]==1){
-        this->arm_request->mode = 1; 
-        this->arm_disarm_client->async_send_request(this->arm_request);
-    }
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Sending DISARM request");
 
+        this->keep_track_button_pressed(&(this->disarm_previous_value), 1);
+    }
     // check if either stop or start offboard pressed
-    if(msg->buttons[this->stop_offboard_mapping]==1){
+    else if(msg->buttons[this->stop_offboard_mapping]==1){
+        if(this->stop_offboard_previous_value!=0) return;
         this->offboard_request->mode = 0; 
         this->start_stop_offboard_client->async_send_request(this->offboard_request);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Sending STOP OFFBOARD request");
+
+        this->keep_track_button_pressed(&(this->stop_offboard_previous_value), 1);
     } 
     else if(msg->buttons[this->start_offboard_mapping]==1){
+        if(this->start_offboard_previous_value!=0) return;
         this->offboard_request->mode = 1;
         this->start_stop_offboard_client->async_send_request(this->offboard_request);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Sending START OFFBOARD request");
+
+        this->keep_track_button_pressed(&(this->start_offboard_previous_value), 1);
     }
+    else if(msg->buttons[this->arm_mapping]==1){
+        if(this->arm_previous_value!=0) return;
 
+        this->arm_request->mode = 1; 
+        this->arm_disarm_client->async_send_request(this->arm_request);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Sending ARM request");
 
+        this->keep_track_button_pressed(&(this->arm_previous_value), 1);
+    }
     // check for increases in the constant value
-    if(msg->axes[this->const_val_inc_dec_mapping]==1){
+    else if(msg->axes[this->const_val_inc_dec_mapping]==1){
+        if(this->const_val_inc_dec_previous_value==1) return;
+
         if(this->joystick_mode==THRUST_ONLY){
             this->rudder_value+=this->increments_const_val;
             this->rudder_value= std::min(this->rudder_value, 1.f);
@@ -81,9 +103,12 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
             this->thrust_value= std::min(this->thrust_value, 1.f);
             RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
         }
+        this->keep_track_button_pressed(&(this->const_val_inc_dec_previous_value), 1);
     }
     // check for decreses in the constant value
     else if(msg->axes[this->const_val_inc_dec_mapping]==-1){
+        if(this->const_val_inc_dec_previous_value==-1) return;
+
         if(this->joystick_mode==THRUST_ONLY){
             this->rudder_value-=this->increments_const_val;
             this->rudder_value= std::max(this->rudder_value, -1.f);
@@ -94,29 +119,47 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
             this->thrust_value= std::max(this->thrust_value, 0.f);
             RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
         }
+        this->keep_track_button_pressed(&(this->const_val_inc_dec_previous_value), -1);
     }
     // check increases in the step value
     else if(msg->axes[this->step_inc_dec_mapping]==1){
+        if(this->step_inc_dec_previous_value==1) return;
         this->increments_const_val+=this->increments_on_step;
         this->increments_const_val = std::min(this->max_increment_value, this->increments_const_val);
         RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+
+        this->keep_track_button_pressed(&(this->step_inc_dec_previous_value), 1);
     }
     // check decreases in the step value
-    else if(msg->axes[this->step_inc_dec_mapping]==-1){
+    else if(msg->axes[this->step_inc_dec_mapping]==-1 ){
+        if(this->step_inc_dec_previous_value==-1) return;
         this->increments_const_val-=this->increments_on_step;
         this->increments_const_val = std::max(this->increments_on_step, this->increments_const_val);
         RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+
+        this->keep_track_button_pressed(&(this->step_inc_dec_previous_value), -1);
     }
-    else if(msg->buttons[this->toogle_mode_mapping]){
+    else if(msg->buttons[this->toogle_mode_mapping]==1){
+        if(this->toogle_mode_previous_value!=0) return;
         this->next_mode_index = (this->next_mode_index+1)%this->nmr_modes;
         RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode To Change to -> "+ this->list_modes_names[this->next_mode_index]);
-    }
-    else if(msg->buttons[this->enter_mode_mapping]){
-        this->change_mode(this->list_modes[this->next_mode_index]);
-        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode Entered -> "+ this->list_modes_names[this->next_mode_index]);
-    } 
 
+        this->keep_track_button_pressed(&(this->toogle_mode_previous_value), 1);
+    }
+    else if(msg->buttons[this->enter_mode_mapping]==1){
+        if(this->enter_mode_previous_value!=0) return;
+        if(this->joystick_mode != this->list_modes[this->next_mode_index]){
+            this->change_mode(this->list_modes[this->next_mode_index]);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode Entered -> "+ this->list_modes_names[this->next_mode_index]);
+        }
+        this->keep_track_button_pressed(&(this->enter_mode_previous_value), 1);
+    }
+    else{
+        *(this->last_pressed_btn) = 0;
+    }
 }
+
+
 
 
 
@@ -135,16 +178,16 @@ void JoyControlNode::init(){
     //  get the necessary parameters from yaml file -> DEFAULT FOR PS4 Controller
     // ----------------------------------------------------------------------
     this->joy_glassy_node->declare_parameter("mapping.axes.thrust", 1);
-    this->joy_glassy_node->declare_parameter("mapping.axes.steering", 2);
-    this->joy_glassy_node->declare_parameter("mapping.axes.const_val_increase_decrease", 6);
-    this->joy_glassy_node->declare_parameter("mapping.axes.step_increase_decrease", 7);
+    this->joy_glassy_node->declare_parameter("mapping.axes.steering", 3);
+    this->joy_glassy_node->declare_parameter("mapping.axes.const_val_increase_decrease", 7);
+    this->joy_glassy_node->declare_parameter("mapping.axes.step_increase_decrease", 6);
 
-    this->joy_glassy_node->declare_parameter("mapping.buttons.arm", 0);
-    this->joy_glassy_node->declare_parameter("mapping.buttons.disarm", 2);
-    this->joy_glassy_node->declare_parameter("mapping.buttons.start_offboard", 3);
-    this->joy_glassy_node->declare_parameter("mapping.buttons.stop_offboard", 4);
-    this->joy_glassy_node->declare_parameter("mapping.buttons.enter_mode", 6);
-    this->joy_glassy_node->declare_parameter("mapping.buttons.toogle_mode", 7);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.arm", 1);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.disarm", 0);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.start_offboard", 2);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.stop_offboard", 3);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.enter_mode", 5);
+    this->joy_glassy_node->declare_parameter("mapping.buttons.toogle_mode", 4);
 
     this->joy_glassy_node->declare_parameter("initial.const_step_value", 0.05);
     this->joy_glassy_node->declare_parameter("initial.step_inc_dec", 0.01);
@@ -171,7 +214,19 @@ void JoyControlNode::init(){
 
     this->nmr_modes = this->list_modes.size();
 
+    // all buttons start unpressed
+    this->arm_previous_value = 0;        
+    this->disarm_previous_value = 0;
+    this->start_offboard_previous_value = 0;
+    this->stop_offboard_previous_value = 0;
+    this->const_val_inc_dec_previous_value = 0;
+    this->step_inc_dec_previous_value = 0;
+    this->toogle_mode_previous_value = 0;
+    this->enter_mode_previous_value = 0;
 
+    
+
+    this->last_pressed_btn = &(this->disarm_previous_value);
 
     // initialize the arm disarm client
     this->arm_disarm_client = this->joy_glassy_node->create_client<glassy_interfaces::srv::Arm>("arm_disarm");

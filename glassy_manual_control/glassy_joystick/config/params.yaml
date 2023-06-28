@@ -3,16 +3,16 @@ glassy_joy_node:
     mapping:
       axes:
         thrust: 1
-        steering: 2
+        steering: 3
         const_val_increase_decrease: 7
         step_increase_decrease: 6
       buttons:
-        arm: 0
-        disarm: 2
-        start_offboard: 3
-        stop_offboard: 4
-        enter_mode: 
-        toogle_mode:
+        arm: 1
+        disarm: 0
+        start_offboard: 2
+        stop_offboard: 3
+        enter_mode: 5
+        toogle_mode: 4
     initial:
       const_step_value: 0.05
       step_inc_dec: 0.01

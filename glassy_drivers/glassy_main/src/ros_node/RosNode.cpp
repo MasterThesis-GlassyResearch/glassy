@@ -70,7 +70,7 @@ void RosNode::arm_disarm(const std::shared_ptr<glassy_interfaces::srv::Arm::Requ
         break;
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request %s",
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming ARM request - %s",
                 mode.c_str());
 
     this->mav_node->arm_disarm(request->mode);
@@ -93,7 +93,7 @@ void RosNode::offboard_start_stop(const std::shared_ptr<glassy_interfaces::srv::
         break;
     }
 
-    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request %s",
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming OFFBOARD request %s",
                 mode.c_str());
 }
 

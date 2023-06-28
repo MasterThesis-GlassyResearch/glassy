@@ -27,6 +27,7 @@ private:
 
     void direct_actuator_publish();
     void change_mode(mode new_mode);
+    void keep_track_button_pressed(int* new_button, int new_val);
 
 
 
@@ -39,9 +40,21 @@ private:
     int stop_offboard_mapping;
     int const_val_inc_dec_mapping;
     int step_inc_dec_mapping;
-
     int toogle_mode_mapping;
     int enter_mode_mapping;
+
+
+    // keep track of wether button clicked now or still clicking from before
+    int arm_previous_value;        
+    int disarm_previous_value;
+    int start_offboard_previous_value;
+    int stop_offboard_previous_value;
+    int const_val_inc_dec_previous_value;
+    int step_inc_dec_previous_value;
+    int toogle_mode_previous_value;
+    int enter_mode_previous_value;
+
+    int* last_pressed_btn;
 
     // whether the extra functions are buttons or axis
     int extra_type;
