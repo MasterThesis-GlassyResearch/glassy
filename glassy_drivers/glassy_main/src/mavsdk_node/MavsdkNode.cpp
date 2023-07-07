@@ -34,25 +34,23 @@ MavsdkNode::MavsdkNode()
 // FIXME IMPORTANT, -> NEED TO ADD A CONFIG FILE AND STUFF TO CONNECT TO EITHER REAL SYSTEM OR SIMULATION
 void MavsdkNode::init(std::string port, bool forwarding)
 {
-    // (void)forwarding; // for now to prevent warnings
+
+    std::cout << "Trying to connect to server..." << std::endl;
+    mavsdk = std::make_shared<mavsdk::Mavsdk>();
 
     mavsdk::ForwardingOption foward;
     if (forwarding)
     {
         foward = mavsdk::ForwardingOption::ForwardingOn;
+        // "udp://127.0.0.1:14550"
+        this->mavsdk->add_any_connection("udp://127.0.0.1:14550", mavsdk::ForwardingOption::ForwardingOn);
     }
     else
     {
         foward = mavsdk::ForwardingOption::ForwardingOff;
     }
 
-    std::cout << "Trying to connect to server..." << std::endl;
-    mavsdk = std::make_shared<mavsdk::Mavsdk>();
 
-    if (forwarding)
-    {
-        this->mavsdk->add_any_connection("udp://127.0.0.1:14550", mavsdk::ForwardingOption::ForwardingOn);
-    }
 
     mavsdk::ConnectionResult connection_result = this->mavsdk->add_any_connection(port, foward);
 
@@ -61,6 +59,8 @@ void MavsdkNode::init(std::string port, bool forwarding)
         std::cerr << "Connection failed: " << connection_result << '\n';
         return;
     }
+
+    std::cout << "Getting system..." << std::endl;
 
     system = this->get_system();
 }
@@ -291,7 +291,7 @@ void MavsdkNode::usage_info(const std::string &bin_name)
 
 std::shared_ptr<mavsdk::System> MavsdkNode::get_system()
 {
-    std::cout << "Waiting to discover system...\n";
+    std::cout << "Waiting to discover system..." << std::endl;
     auto prom = std::promise<std::shared_ptr<mavsdk::System>>{};
     auto fut = prom.get_future();
 
@@ -299,11 +299,12 @@ std::shared_ptr<mavsdk::System> MavsdkNode::get_system()
     // autopilot, we decide to use it.
     mavsdk->subscribe_on_new_system([this, &prom]()
                                     {
-        auto system = this->mavsdk->systems().back();
+        auto system = this->mavsdk->systems()[0];
+        // auto system = this->mavsdk->systems().back();
 
         if (system->has_autopilot()) {
             prom.set_value(system);
-            std::cout << "Discovered autopilot\n";
+            std::cout << "Discovered autopilot" <<std::endl;
 
             // Unsubscribe again as we only want to find one system.
             this->mavsdk->subscribe_on_new_system(nullptr);
@@ -329,21 +330,21 @@ void MavsdkNode::initialize_system()
                        if (set_rate_result_position_global != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
-                           std::cout << "Setting rate failed:" << set_rate_result_position_global << '\n';
+                           std::cout << "Setting rate failed:" << set_rate_result_position_global << std::endl;
                        }
 
                        const mavsdk::Telemetry::Result set_rate_result_odometry = this->telemetry->set_rate_odometry(20.0);
                        if (set_rate_result_odometry != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
-                           std::cout << "Setting rate failed:" << set_rate_result_odometry << '\n';
+                           std::cout << "Setting rate failed:" << set_rate_result_odometry << std::endl;
                        }
 
                        const mavsdk::Telemetry::Result set_rate_result_attitude = this->telemetry->set_rate_attitude(20.0);
                        if (set_rate_result_attitude != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
-                           std::cout << "Setting rate failed:" << set_rate_result_attitude << '\n';
+                           std::cout << "Setting rate failed:" << set_rate_result_attitude << std::endl;
                        }
 
                        // subscribe to the topics

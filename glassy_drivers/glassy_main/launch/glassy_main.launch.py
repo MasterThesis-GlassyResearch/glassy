@@ -9,6 +9,7 @@ def generate_launch_description():
             package='glassy_main',
             namespace='glassy',
             executable='glassy_main',
-            name='main'
+            name='main',
+            output='screen'
         ),
     ])

@@ -22,15 +22,6 @@ using std::this_thread::sleep_for;
 
 int main(int argc, char **argv)
 {
-
-    bool foward = false;    
-    std::string port = "udp://:14540";
-    if(argc>1 && strcmp("real_vehicle", argv[1]) == 0){
-        port = "serial:///dev/ttyACM0:57600";
-        foward = true;
-    }
-
-
     // initialize rclcpp
     rclcpp::init(argc, argv);
 
@@ -50,13 +41,21 @@ int main(int argc, char **argv)
     // initialize publishers in ros node and suscribers in mav node
     ros_com->init();
 
-    // TODO -> make port and fowarding dynamic
+
+    bool forward = false;    
+    std::string port = "udp://:14540";
+
+    ros_com->ros_node->declare_parameter("port", "udp://:14540");
+    ros_com->ros_node->declare_parameter("forwarding", false);
+    port = ros_com->ros_node->get_parameter("port").as_string();
+    forward = ros_com->ros_node->get_parameter("forwarding").as_bool();
+
 
     //rx_connection = 'serial:///dev/ttyUSB0:460800'
     //rx_connection = 'serial:///dev/ttyACM0:57600'
     
     // port = "serial:///dev/ttyACM0:57600";
-    mav_com->init(port, foward);
+    mav_com->init(port, forward);
 
 
     // spin node 
