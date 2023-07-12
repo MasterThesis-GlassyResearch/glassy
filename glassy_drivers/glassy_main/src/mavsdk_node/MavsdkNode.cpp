@@ -299,18 +299,20 @@ std::shared_ptr<mavsdk::System> MavsdkNode::get_system()
     // autopilot, we decide to use it.
     mavsdk->subscribe_on_new_system([this, &prom]()
                                     {
-        auto system = this->mavsdk->systems()[0];
-        // auto system = this->mavsdk->systems().back();
+        // auto system = this->mavsdk->systems()[0];
+        auto system = this->mavsdk->systems().back();
+        for (auto system : this->mavsdk->systems()) {
+            if (system->has_autopilot()) {
+                prom.set_value(system);
+                std::cout << "Discovered autopilot" <<std::endl;
 
-        if (system->has_autopilot()) {
-            prom.set_value(system);
-            std::cout << "Discovered autopilot" <<std::endl;
-
-            // Unsubscribe again as we only want to find one system.
-            this->mavsdk->subscribe_on_new_system(nullptr);
-            this->initialize_system();
-
-        } });
+                // Unsubscribe again as we only want to find one system.
+                this->mavsdk->subscribe_on_new_system(nullptr);
+                this->initialize_system();
+                break;
+            }
+        }
+    });
 
     // only fufill promise when heartbeat detected
     return fut.get();
