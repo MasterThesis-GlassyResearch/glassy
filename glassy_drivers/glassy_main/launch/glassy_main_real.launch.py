@@ -16,11 +16,11 @@ def generate_launch_description():
         'port',
         default_value='serial:///dev/serial/by-id/usb-3D_Robotics_PX4_FMU_v5.x_0-if00:57600'
     )
-
     forwarding_arg = DeclareLaunchArgument(
         'forwarding',
         default_value='True'
     )
+    
 
     return LaunchDescription([
         Node(
