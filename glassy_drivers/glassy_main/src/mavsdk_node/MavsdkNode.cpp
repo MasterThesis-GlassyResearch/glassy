@@ -335,14 +335,14 @@ void MavsdkNode::initialize_system()
                            std::cout << "Setting rate failed:" << set_rate_result_position_global << std::endl;
                        }
 
-                       const mavsdk::Telemetry::Result set_rate_result_odometry = this->telemetry->set_rate_odometry(20.0);
+                       const mavsdk::Telemetry::Result set_rate_result_odometry = this->telemetry->set_rate_odometry(30.0);
                        if (set_rate_result_odometry != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
                            std::cout << "Setting rate failed:" << set_rate_result_odometry << std::endl;
                        }
 
-                       const mavsdk::Telemetry::Result set_rate_result_attitude = this->telemetry->set_rate_attitude(20.0);
+                       const mavsdk::Telemetry::Result set_rate_result_attitude = this->telemetry->set_rate_attitude(30.0);
                        if (set_rate_result_attitude != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)

@@ -11,7 +11,7 @@
 #include "sensor_msgs/msg/joy.hpp"
 
 
-enum mode{FULL_CONTROL, RUDDER_ONLY, THRUST_ONLY, NO_CONTROL};
+enum mode{FULL_CONTROL, RUDDER_ONLY, THRUST_ONLY, NO_CONTROL, RUDDER_TRIM, THRUST_TRIM, RUDDER_GAIN};
 class JoyControlNode
 {
 private:
@@ -20,6 +20,13 @@ private:
     // values sent directly to actuators if correct mode is set
     float rudder_value = 0;
     float thrust_value = 0;  
+    float rudder_trim = 0;
+    float thrust_gain = 0.65;
+    float rudder_gain = 0.9;
+    float thrust_trim = 0.3;
+
+
+
 
     float increments_const_val;
     float increments_on_step;
@@ -62,8 +69,8 @@ private:
     mode joystick_mode = FULL_CONTROL;
     int next_mode_index = 0;
 
-    std::vector<mode> list_modes{FULL_CONTROL, RUDDER_ONLY, THRUST_ONLY, NO_CONTROL};
-    std::vector<std::string> list_modes_names{"FULL_CONTROL", "RUDDER_ONLY", "THRUST_ONLY", "NO_CONTROL"};
+    std::vector<mode> list_modes{FULL_CONTROL, RUDDER_TRIM, THRUST_TRIM, RUDDER_GAIN};
+    std::vector<std::string> list_modes_names{"FULL_CONTROL", "RUDDER_TRIM", "THRUST_TRIM", "RUDDER_GAIN"};
     int nmr_modes = 4;
 
 
@@ -97,6 +104,8 @@ public:
 
     //client, will intercact with the start/stop offboard service
     rclcpp::Client<glassy_interfaces::srv::Arm>::SharedPtr start_stop_offboard_client;
+
+    // std::shared_ptr<rclcpp::ParameterEventHandler> param_thrust_gain_subs;
 
     void init();
 

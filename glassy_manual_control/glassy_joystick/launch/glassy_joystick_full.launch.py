@@ -18,7 +18,8 @@ def generate_launch_description():
             namespace='glassy',
             executable='glassy_joystick',
             name='glassy_joystick',
-            parameters = config
+            parameters = config,
+            output = 'screen'
         ),
         Node(
             package='joy',

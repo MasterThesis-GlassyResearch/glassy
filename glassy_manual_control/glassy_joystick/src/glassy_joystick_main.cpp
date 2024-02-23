@@ -11,7 +11,7 @@ int main(int argc, char *argv[]){
 
     //create joystick node
     std::cout << "starting joystick node....\n";
-    std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("glassy_joy_node");
+    std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("glassy_joystick");
 
     // initialize an object of both MavlinkNode and RosNode 
     std::shared_ptr<JoyControlNode> joy_com = std::make_shared<JoyControlNode>(nh);

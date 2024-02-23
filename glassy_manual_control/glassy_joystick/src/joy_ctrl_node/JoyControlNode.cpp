@@ -26,10 +26,17 @@ void JoyControlNode::keep_track_button_pressed(int* new_button, int new_val){
 }
 
 void JoyControlNode::direct_actuator_publish(){
-    this->direct_actuator_msg.rudder = this->rudder_value;
-    this->direct_actuator_msg.thrust = this->thrust_value;
+
+    // this->direct_actuator_msg.rudder = this->rudder_value + this->rudder_trim;
+    // this->direct_actuator_msg.thrust = std::min(this->thrust_value, this->thrust_gain);
+    // this->direct_actuator_msg.header.stamp = this->joy_glassy_node->get_clock()->now();
+
+    this->direct_actuator_msg.rudder = std::min(std::max(this->rudder_trim + this->rudder_gain *this->rudder_value * (1 - this->rudder_trim/this->rudder_gain), -1.f), 1.f);
+    this->direct_actuator_msg.thrust = std::min(std::max(this->thrust_trim + this->thrust_gain *  this->thrust_value * (1 - this->thrust_trim/this->thrust_gain), 0.f), 1.f);
     this->direct_actuator_msg.header.stamp = this->joy_glassy_node->get_clock()->now();
 
+    // std::cout<< "Thrust: " << this->direct_actuator_msg.thrust << std::endl;
+    
     this->glassy_interface_publisher->publish(this->direct_actuator_msg);
 }   
 
@@ -38,18 +45,8 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
 
     // if any control given to the joystick, publish direct controls
     if(this->joystick_mode!=NO_CONTROL){
-
-        // get relevant information from joystick depending on joystick mode
-        if(this->joystick_mode==THRUST_ONLY){
-            this->thrust_value = msg->axes[this->thrust_mapping]; 
-        }
-        else if(this->joystick_mode==RUDDER_ONLY){
-            this->rudder_value = -msg->axes[this->steering_mapping];
-        } 
-        else{
-            this->rudder_value = -msg->axes[this->steering_mapping];
-            this->thrust_value = msg->axes[this->thrust_mapping];
-        }
+        this->rudder_value = -msg->axes[this->steering_mapping];
+        this->thrust_value = msg->axes[this->thrust_mapping];
         this->direct_actuator_publish();
     }
 
@@ -93,15 +90,25 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
     else if(msg->axes[this->const_val_inc_dec_mapping]==1){
         if(this->const_val_inc_dec_previous_value==1) return;
 
-        if(this->joystick_mode==THRUST_ONLY){
-            this->rudder_value+=this->increments_const_val;
-            this->rudder_value= std::min(this->rudder_value, 1.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Value = "+ std::to_string(this->rudder_value));
+        if(this->joystick_mode==THRUST_TRIM){
+            this->thrust_trim+=this->increments_const_val;
+            this->thrust_trim= std::min(this->thrust_trim, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Trim Value = %.2f", this->thrust_trim);
         }
-        else if(this->joystick_mode==RUDDER_ONLY){
-            this->thrust_value+=this->increments_const_val;
-            this->thrust_value= std::min(this->thrust_value, 1.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
+        else if(this->joystick_mode==RUDDER_TRIM){
+            this->rudder_trim+=this->increments_const_val;
+            this->rudder_trim= std::min(this->rudder_trim, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Trim Value = %.2f", this->rudder_trim);
+        }
+        else if(this->joystick_mode==FULL_CONTROL){
+            this->thrust_gain+=this->increments_const_val;
+            this->thrust_gain= std::min(this->thrust_gain, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = ",this->thrust_gain);
+        }
+        else if(this->joystick_mode==RUDDER_GAIN){
+            this->rudder_gain+=this->increments_const_val;
+            this->rudder_gain= std::min(this->rudder_gain, 1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = ",this->rudder_gain);
         }
         this->keep_track_button_pressed(&(this->const_val_inc_dec_previous_value), 1);
     }
@@ -109,51 +116,64 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
     else if(msg->axes[this->const_val_inc_dec_mapping]==-1){
         if(this->const_val_inc_dec_previous_value==-1) return;
 
-        if(this->joystick_mode==THRUST_ONLY){
-            this->rudder_value-=this->increments_const_val;
-            this->rudder_value= std::max(this->rudder_value, -1.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Value = "+ std::to_string(this->rudder_value));
+        if(this->joystick_mode==THRUST_TRIM){
+            this->thrust_trim-=this->increments_const_val;
+            this->thrust_trim= std::max(this->thrust_trim, 0.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = %.2f",this->thrust_trim);
         }
-        else if(this->joystick_mode==RUDDER_ONLY){
-            this->thrust_value-=this->increments_const_val;
-            this->thrust_value= std::max(this->thrust_value, 0.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Value = "+ std::to_string(this->thrust_value));
+        else if(this->joystick_mode==RUDDER_TRIM){
+            this->rudder_trim-=this->increments_const_val;
+            this->rudder_trim= std::max(this->rudder_trim, -1.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Rudder Trim = %.2f",this->rudder_trim);
+        }
+        else if(this->joystick_mode==FULL_CONTROL){
+            this->thrust_gain-=this->increments_const_val;
+            this->thrust_gain= std::max(this->thrust_gain, 0.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = %.2f",this->thrust_gain);
+        }
+        else if(this->joystick_mode==RUDDER_GAIN){
+            this->rudder_gain-=this->increments_const_val;
+            this->rudder_gain= std::max(this->rudder_gain, 0.f);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = %.2f",this->rudder_gain);
         }
         this->keep_track_button_pressed(&(this->const_val_inc_dec_previous_value), -1);
     }
     // check increases in the step value
-    else if(msg->axes[this->step_inc_dec_mapping]==1){
+    else if(msg->axes[this->step_inc_dec_mapping]==-1){
         if(this->step_inc_dec_previous_value==1) return;
         this->increments_const_val+=this->increments_on_step;
         this->increments_const_val = std::min(this->max_increment_value, this->increments_const_val);
-        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = %.2f",this->increments_const_val);
 
         this->keep_track_button_pressed(&(this->step_inc_dec_previous_value), 1);
     }
     // check decreases in the step value
-    else if(msg->axes[this->step_inc_dec_mapping]==-1 ){
+    else if(msg->axes[this->step_inc_dec_mapping]==1 ){
         if(this->step_inc_dec_previous_value==-1) return;
         this->increments_const_val-=this->increments_on_step;
         this->increments_const_val = std::max(this->increments_on_step, this->increments_const_val);
-        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = "+ std::to_string(this->increments_const_val));
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Increment Value = %.2f",this->increments_const_val);
 
         this->keep_track_button_pressed(&(this->step_inc_dec_previous_value), -1);
     }
+
+    // CHANGE AND ENTER MODES ------------------------------------------
     else if(msg->buttons[this->toogle_mode_mapping]==1){
         if(this->toogle_mode_previous_value!=0) return;
         this->next_mode_index = (this->next_mode_index+1)%this->nmr_modes;
-        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode To Change to -> "+ this->list_modes_names[this->next_mode_index]);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode To Change to -> %s", this->list_modes_names[this->next_mode_index].c_str());
 
         this->keep_track_button_pressed(&(this->toogle_mode_previous_value), 1);
     }
     else if(msg->buttons[this->enter_mode_mapping]==1){
         if(this->enter_mode_previous_value!=0) return;
-        if(this->joystick_mode != this->list_modes[this->next_mode_index]){
-            this->change_mode(this->list_modes[this->next_mode_index]);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode Entered -> "+ this->list_modes_names[this->next_mode_index]);
-        }
+        this->change_mode(this->list_modes[this->next_mode_index]);
+        RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Mode Entered -> %s",this->list_modes_names[this->next_mode_index].c_str());
+
         this->keep_track_button_pressed(&(this->enter_mode_previous_value), 1);
     }
+    
+    // If nothing pressed, set previoulsy set button to 0 ---------------
     else{
         *(this->last_pressed_btn) = 0;
     }
@@ -176,6 +196,7 @@ void JoyControlNode::init(){
 
     // ---------------------------------------------------------------------
     //  get the necessary parameters from yaml file -> DEFAULT FOR PS4 Controller
+    //TODO make default logitech controller
     // ----------------------------------------------------------------------
     this->joy_glassy_node->declare_parameter("mapping.axes.thrust", 1);
     this->joy_glassy_node->declare_parameter("mapping.axes.steering", 3);
@@ -192,6 +213,13 @@ void JoyControlNode::init(){
     this->joy_glassy_node->declare_parameter("initial.const_step_value", 0.05);
     this->joy_glassy_node->declare_parameter("initial.step_inc_dec", 0.01);
     this->joy_glassy_node->declare_parameter("initial.max_const_step_val", 0.15);
+    
+    this->joy_glassy_node->declare_parameter("thrust_trim", 0.0);
+    this->joy_glassy_node->declare_parameter("thrust_gain", 1.0);
+    this->joy_glassy_node->declare_parameter("rudder_gain", 1.0);
+    this->joy_glassy_node->declare_parameter("rudder_trim", 0.15);
+
+
 
 
     // Initialize all the parameters
@@ -211,6 +239,12 @@ void JoyControlNode::init(){
 
     this->enter_mode_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.enter_mode").as_int();
     this->toogle_mode_mapping = this->joy_glassy_node->get_parameter("mapping.buttons.toogle_mode").as_int();
+
+
+    this->thrust_gain = this->joy_glassy_node->get_parameter("thrust_gain").as_double();
+    this->thrust_trim = this->joy_glassy_node->get_parameter("thrust_trim").as_double();
+    this->rudder_gain = this->joy_glassy_node->get_parameter("rudder_gain").as_double();
+    this->rudder_trim = this->joy_glassy_node->get_parameter("rudder_trim").as_double();
 
     this->nmr_modes = this->list_modes.size();
 

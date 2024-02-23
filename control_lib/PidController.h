@@ -17,9 +17,9 @@ protected:
     float d_gain;
 
     // error and output boundaries
-    float max_err;
+    float max_integral_val;
     float max_out;
-    float min_err; 
+    float min_integral_val; 
     float min_out;
 
     // integral value
@@ -33,7 +33,7 @@ protected:
 
     void reset_integral();
 
-    float computeOutput(float current_val, float ref_val, float duration, float debug=false);
+    float computePIDOutput(float current_val, float ref_val, float duration, int debug=false);
 
 private:
     float clipping(float value, float max, float min);

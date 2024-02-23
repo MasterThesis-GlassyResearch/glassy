@@ -8,9 +8,9 @@ glassy_main_node:
       offboard_attitude_rate: false
       manual_control: false
     data_rates:
-      position: 10
-      odometry: 10
-      attitude: 10 
+      position: 20
+      odometry: 50
+      attitude: 50 
 
     
     
