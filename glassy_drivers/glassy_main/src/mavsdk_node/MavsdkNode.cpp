@@ -8,7 +8,7 @@
 #include <chrono>
 #include <thread>
 #include <future>
-#include <future>
+#include <cmath>
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "glassy_interfaces/srv/arm.hpp"
@@ -246,9 +246,9 @@ void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry)
 void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles)
 {
 
-    this->state_message.pitch = euler_angles.pitch_deg;
-    this->state_message.roll = euler_angles.roll_deg;
-    this->state_message.yaw = euler_angles.yaw_deg;
+    this->state_message.pitch = euler_angles.pitch_deg*M_PI/180;
+    this->state_message.roll = euler_angles.roll_deg*M_PI/180;
+    this->state_message.yaw = euler_angles.yaw_deg*M_PI/180;
     this->state_message.header.stamp = this->ros_node->ros_node->get_clock()->now();
 
     this->print_state();

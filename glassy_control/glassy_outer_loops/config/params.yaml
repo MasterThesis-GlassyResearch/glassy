@@ -1,0 +1,30 @@
+glassy:
+  glassy_joystick:
+    ros__parameters:
+      mapping:
+        axes:
+          thrust: 1
+          steering: 3
+          const_val_increase_decrease: 7
+          step_increase_decrease: 6
+        buttons:
+          arm: 1
+          disarm: 0
+          start_offboard: 2
+          stop_offboard: 3
+          enter_mode: 5
+          toogle_mode: 4
+      initial:
+        const_step_value: 0.05
+        step_inc_dec: 0.01
+        max_const_step_val: 0.15
+      thrust_trim: 0.3
+      rudder_trim: 0.0
+      thrust_gain: 0.65
+      rudder_gain : 0.9
+    
+    
+
+
+      
+

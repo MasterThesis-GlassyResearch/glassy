@@ -1,13 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
-project(glassy_interfaces)
-
+project(glassy_innerloop)
 
 # Default to C99
 if(NOT CMAKE_C_STANDARD)
   set(CMAKE_C_STANDARD 99)
 endif()
 
-# Default to C++14
+# Default to C++17
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -16,33 +15,28 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(glassy_interfaces REQUIRED)
+find_package (Eigen3 REQUIRED)
 
 
-set(msg_files
-  "msg/State.msg"
-  "msg/Manualactuatorsignals.msg"
-  "msg/Offboarddirectcontrol.msg"
-  "msg/Offboardattituderate.msg"
-  "msg/Innerloopreferences.msg"
-  "msg/Pathreferences.msg"
-  )
 
-set(srv_files
-   "srv/Arm.srv"
-   "srv/Pidgains.srv"
-  )
+file(GLOB_RECURSE SOURCE_FILES src/PID_ctrl_node/*.cpp ../control_lib/*.cpp) 
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-  ${srv_files}
-  DEPENDENCIES std_msgs
-)
+add_executable(glassy_innerloop src/glassy_innerloop_main.cpp ${SOURCE_FILES} )
+
+target_compile_features(glassy_innerloop PRIVATE cxx_std_20)
+target_include_directories(glassy_innerloop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/PID_ctrl_node ${CMAKE_CURRENT_SOURCE_DIR}/../control_lib ${EIGEN3_INCLUDE_DIR})
+
+ament_target_dependencies(glassy_innerloop rclcpp sensor_msgs glassy_interfaces)
+
+install(TARGETS glassy_innerloop
+  DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -54,6 +48,15 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_dependencies(rosidl_default_runtime)
+# Install launch files.
+install(DIRECTORY
+  launch
+  DESTINATION share/${PROJECT_NAME}/
+)
+
+install(DIRECTORY
+  config
+  DESTINATION share/${PROJECT_NAME}
+)
 
 ament_package()
