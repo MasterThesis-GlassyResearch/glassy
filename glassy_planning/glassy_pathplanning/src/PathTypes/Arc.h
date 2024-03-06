@@ -8,15 +8,28 @@
 
 
 
-class Arc: PathBase
+class Arc: public PathBase
 {
 private:
     /* data */
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
     float ini_angle;
+    float angle_scale;
     float final_angle;
     bool is_circle=false;
+
+    float current_tang_heading=0;
+
+    bool isAngleBetween(float start, float end, float mid) {     
+        end = (end - start) < 0.0f ? end - start + 2*M_PI : end - start;    
+        mid = (mid - start) < 0.0f ? mid - start + 2*M_PI : mid - start;
+        if(this->angle_scale>0){
+            return (mid < end); 
+        } else{
+            return (end<mid);
+        }
+    }
 
     
 
@@ -27,6 +40,7 @@ private:
 public:
     Arc(/* args */){};
     Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ);
+    Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_scale);
     Eigen::Vector2d getClosestPoint(Eigen::Vector2d point);
 
     float getTangHeading(Eigen::Vector2d point);

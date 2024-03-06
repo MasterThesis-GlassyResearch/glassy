@@ -14,7 +14,7 @@ class LOSouterloop
 private:
     /* data */
 
-    float look_ahead_dist = 10;
+    float look_ahead_dist = 5;
     
     // < surge, yaw >
     std::vector<float> references;

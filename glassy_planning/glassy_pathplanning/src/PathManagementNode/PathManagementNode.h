@@ -12,6 +12,7 @@
 
 #include "../PathTypes/Line.h"
 #include "../PathTypes/Arc.h"
+#include "../PathTypes/PathBase.h"
 #include "eigen3/Eigen/Core"
 
 
@@ -25,6 +26,9 @@ private:
     void ComputePathPointProperties(){};
 
     Eigen::Vector2d current_pose;
+
+
+    bool path_is_set=false;
 
    float x=0.0;
    float x_ref=0.0;
@@ -45,12 +49,16 @@ private:
     Line test_line1;
     Arc test_arc1;
 
+    std::vector<std::shared_ptr<PathBase>> path_segments;
+    int path_index = 0;
+
 public:
 
     PathManagementNode(std::shared_ptr<rclcpp::Node> node);
     ~PathManagementNode(){};
 
     void setPath(std::string file_location);
+    void setPath();
 
     std::shared_ptr<rclcpp::Node> pathmanagement_node;
 

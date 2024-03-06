@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "PathBase.h"
 
-class Line: PathBase
+class Line: public PathBase
 {
 private:
     /* data */
@@ -21,7 +21,7 @@ public:
     Line(Eigen::Vector2d start_point, Eigen::Vector2d final_point);
     Eigen::Vector2d getClosestPoint(Eigen::Vector2d point);
 
-    float getTangHeading();
+    float getTangHeading(Eigen::Vector2d point);
 
 
     ~Line();

@@ -24,10 +24,16 @@ PathFollowingNode::PathFollowingNode(std::shared_ptr<rclcpp::Node> node): pathfo
 
 void PathFollowingNode::ref_publish(){
 
-    
-    this->inner_loop_ref_msg.yaw_ref = 0.0;
-    this->inner_loop_ref_msg.surge_ref = 0.0;
-    this->inner_loop_ref_msg.yaw_rate_ref = 0.0;
+    if(!this->is_active){
+        this->inner_loop_ref_msg.yaw_ref = 0.0;
+        this->inner_loop_ref_msg.surge_ref = 0.0;
+        this->inner_loop_ref_msg.yaw_rate_ref = 0.0;
+
+
+        // publish message
+        this->reference_publisher->publish(this->inner_loop_ref_msg);
+    }
+
 
     std::vector<float> res_los = this->LOSPathFollowing.computeOutput(this->pose_ref, this->pose,this->tangent_heading, this->speed);
 
@@ -53,8 +59,7 @@ void PathFollowingNode::path_subscription_callback(const glassy_interfaces::msg:
     this->pose_ref(0) = msg->x_ref;
     this->pose_ref(1) = msg->y_ref;
     this->tangent_heading = msg->tangent_heading;
-;
-
+    this->is_active = msg->is_active;
 
 }
 
