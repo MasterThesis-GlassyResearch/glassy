@@ -27,6 +27,8 @@ private:
 
     Eigen::Vector2d current_pose;
 
+    void correct_home_position();
+
 
     bool path_is_set=false;
 
@@ -34,6 +36,20 @@ private:
    float x_ref=0.0;
    float y=0.0;
    float y_ref=0.0;
+
+   float lat = 0.0;
+   float lon = 0.0;
+
+   float home_lat = 38.766144;
+   float home_lon = -9.093334;
+
+
+   float x_correction=0.0;
+   float y_correction=0.0;
+
+
+
+
 
    float max_surge = 5;
    float min_surge = 0;
@@ -50,6 +66,7 @@ private:
     Arc test_arc1;
 
     std::vector<std::shared_ptr<PathBase>> path_segments;
+    std::vector<float> requested_surge;
     int path_index = 0;
 
 public:

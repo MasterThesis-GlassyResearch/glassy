@@ -31,28 +31,27 @@ MavsdkNode::MavsdkNode()
 }
 
 
-// FIXME IMPORTANT, -> NEED TO ADD A CONFIG FILE AND STUFF TO CONNECT TO EITHER REAL SYSTEM OR SIMULATION
 void MavsdkNode::init(std::string port, bool forwarding)
 {
 
     std::cout << "Trying to connect to server..." << std::endl;
     mavsdk = std::make_shared<mavsdk::Mavsdk>();
 
-    mavsdk::ForwardingOption foward;
+    mavsdk::ForwardingOption forward;
     if (forwarding)
     {
-        foward = mavsdk::ForwardingOption::ForwardingOn;
+        forward = mavsdk::ForwardingOption::ForwardingOn;
         // "udp://127.0.0.1:14550"
         this->mavsdk->add_any_connection("udp://127.0.0.1:14550", mavsdk::ForwardingOption::ForwardingOn);
     }
     else
     {
-        foward = mavsdk::ForwardingOption::ForwardingOff;
+        forward = mavsdk::ForwardingOption::ForwardingOff;
     }
 
 
 
-    mavsdk::ConnectionResult connection_result = this->mavsdk->add_any_connection(port, foward);
+    mavsdk::ConnectionResult connection_result = this->mavsdk->add_any_connection(port, forward);
 
     if (connection_result != mavsdk::ConnectionResult::Success)
     {
@@ -206,7 +205,7 @@ void MavsdkNode::publish_global_position(mavsdk::Telemetry::Position position)
     this->state_message.latitude = position.latitude_deg;
     this->state_message.longitude = position.longitude_deg;
     this->state_message.header.stamp = this->ros_node->ros_node->get_clock()->now();
-    this->print_state();
+    // this->print_state();
 
     this->ros_node->state_publisher->publish(this->state_message);
 }
@@ -220,7 +219,7 @@ void MavsdkNode::publish_ned_position(mavsdk::Telemetry::PositionVelocityNed pos
     this->state_message.down = position_velocity.position.down_m;
     this->state_message.header.stamp = this->ros_node->ros_node->get_clock()->now();
 
-    this->print_state();
+    // this->print_state();
 
     this->ros_node->state_publisher->publish(this->state_message);
 }
@@ -237,7 +236,7 @@ void MavsdkNode::publish_odometry(mavsdk::Telemetry::Odometry odometry)
     this->state_message.pitch_rate = odometry.angular_velocity_body.pitch_rad_s;
     this->state_message.header.stamp = this->ros_node->ros_node->get_clock()->now();
 
-    this->print_state();
+    // this->print_state();
 
     this->ros_node->state_publisher->publish(this->state_message);
 }
@@ -251,7 +250,7 @@ void MavsdkNode::publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles)
     this->state_message.yaw = euler_angles.yaw_deg*M_PI/180;
     this->state_message.header.stamp = this->ros_node->ros_node->get_clock()->now();
 
-    this->print_state();
+    // this->print_state();
     this->ros_node->state_publisher->publish(this->state_message);
 }
 
@@ -299,7 +298,6 @@ std::shared_ptr<mavsdk::System> MavsdkNode::get_system()
     // autopilot, we decide to use it.
     mavsdk->subscribe_on_new_system([this, &prom]()
                                     {
-        // auto system = this->mavsdk->systems()[0];
         auto system = this->mavsdk->systems().back();
         for (auto system : this->mavsdk->systems()) {
             if (system->has_autopilot()) {
@@ -328,32 +326,42 @@ void MavsdkNode::initialize_system()
                        this->manual_control = std::make_shared<mavsdk::ManualControl>(system);
 
                        // ------------------ Setting rates of telemetry
-                       const mavsdk::Telemetry::Result set_rate_result_position_global = this->telemetry->set_rate_position(20.0);
+                       const mavsdk::Telemetry::Result set_rate_result_position_global = this->telemetry->set_rate_position(this->gps_rate);
                        if (set_rate_result_position_global != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
                            std::cout << "Setting rate failed:" << set_rate_result_position_global << std::endl;
                        }
 
-                       const mavsdk::Telemetry::Result set_rate_result_odometry = this->telemetry->set_rate_odometry(30.0);
+                       const mavsdk::Telemetry::Result set_rate_result_odometry = this->telemetry->set_rate_odometry(this->odom_rate);
                        if (set_rate_result_odometry != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
                            std::cout << "Setting rate failed:" << set_rate_result_odometry << std::endl;
                        }
 
-                       const mavsdk::Telemetry::Result set_rate_result_attitude = this->telemetry->set_rate_attitude(30.0);
+                       const mavsdk::Telemetry::Result set_rate_result_attitude = this->telemetry->set_rate_attitude(this->att_rate);
                        if (set_rate_result_attitude != mavsdk::Telemetry::Result::Success)
                        {
                            // handle rate-setting failure (in this case print error)
                            std::cout << "Setting rate failed:" << set_rate_result_attitude << std::endl;
                        }
 
+                       const mavsdk::Telemetry::Result set_rate_result_pose_ned = this->telemetry->set_rate_position_velocity_ned(this->ned_rate);
+                       if (set_rate_result_pose_ned != mavsdk::Telemetry::Result::Success)
+                       {
+                           // handle rate-setting failure (in this case print error)
+                           std::cout << "Setting rate failed:" << set_rate_result_pose_ned << std::endl;
+                       }
+
+
                        // subscribe to the topics
-                       this->telemetry->subscribe_position(std::bind(&MavsdkNode::publish_global_position, this, _1));
-                       this->telemetry->subscribe_position_velocity_ned(std::bind(&MavsdkNode::publish_ned_position, this, _1));
                        this->telemetry->subscribe_odometry(std::bind(&MavsdkNode::publish_odometry, this, _1));
                        this->telemetry->subscribe_attitude_euler(std::bind(&MavsdkNode::publish_attitude, this, _1));
+                       this->telemetry->subscribe_position(std::bind(&MavsdkNode::publish_global_position, this, _1));
+                       this->telemetry->subscribe_position_velocity_ned(std::bind(&MavsdkNode::publish_ned_position, this, _1));
+
+
                    });
 
     th.detach();

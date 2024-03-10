@@ -35,6 +35,13 @@ private:
     void publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles);
     void publish_ned_position(mavsdk::Telemetry::PositionVelocityNed position_velocity);
 
+    // message rates
+    double odom_rate=20;
+    double att_rate=20;
+    double ned_rate=20;
+    double gps_rate=1;
+
+
     // messages
     glassy_interfaces::msg::State state_message;
 
@@ -71,6 +78,27 @@ public:
     void offboard_attitude_rate_control(float steering_signal, float throttle_signal);
     void enter_offboard(int mode);
     void stop_offboard();
+
+
+
+    
+
+    void set_att_rate(double rate){
+        this->att_rate=rate;
+        std::cout<< "Attitude rate set to: " << this->att_rate << std::endl;
+    };
+    void set_odom_rate(double rate){
+        this->odom_rate=rate;
+        std::cout<< "Odom rate set to: " << this->odom_rate << std::endl; 
+    };
+    void set_gps_rate(double rate){
+        this->gps_rate=rate;
+        std::cout<< "GPS rate set to: " << this->gps_rate << std::endl;
+    };
+    void set_ned_rate(double rate){
+        this->ned_rate=rate;
+        std::cout<< "Ned rate set to: " << this->ned_rate << std::endl;
+    };
 
 
     //Manual Mode

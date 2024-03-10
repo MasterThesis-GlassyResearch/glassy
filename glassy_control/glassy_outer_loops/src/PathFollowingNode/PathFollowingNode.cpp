@@ -39,9 +39,8 @@ void PathFollowingNode::ref_publish(){
 
     this->inner_loop_ref_msg.header.stamp = this->pathfollowing_node->get_clock()->now();
 
-    //TODO make sure we can select other path followings...
     // load the message
-    this->inner_loop_ref_msg.surge_ref= res_los[0];
+    this->inner_loop_ref_msg.surge_ref= this->surge_ref;
     this->inner_loop_ref_msg.yaw_ref= res_los[1];
     this->inner_loop_ref_msg.yaw_rate_ref = 0.0;
 
@@ -59,6 +58,7 @@ void PathFollowingNode::path_subscription_callback(const glassy_interfaces::msg:
     this->pose_ref(0) = msg->x_ref;
     this->pose_ref(1) = msg->y_ref;
     this->tangent_heading = msg->tangent_heading;
+    this->surge_ref = msg->path_vel;
     this->is_active = msg->is_active;
 
 }

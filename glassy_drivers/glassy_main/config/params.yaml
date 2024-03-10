@@ -1,16 +1,20 @@
-glassy_main_node:
-  ros__parameters:
-    publishers:
-      state: true
-      battery: false
-    subscriptions:
-      offboard_direct: true
-      offboard_attitude_rate: false
-      manual_control: false
-    data_rates:
-      position: 20
-      odometry: 50
-      attitude: 50 
+/glassy:
+  glassy_main:
+    ros__parameters:
+      forwarding: true
+      port: "udp://:14540"
+      publishers:
+        state: true
+        battery: false
+      subscriptions:
+        offboard_direct: true
+        offboard_attitude_rate: false
+        manual_control: false
+      data_rates:
+        position_ned: 3.0
+        position_gps: 0.5
+        odometry: 3.0
+        attitude: 3.0
 
     
     

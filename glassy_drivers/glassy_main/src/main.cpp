@@ -1,5 +1,5 @@
 #include <iostream>
-#include <MavsdkNode.h>
+#include "MavsdkNode.h"
 #include <RosNode.h>
 
 #include <mavsdk/mavsdk.h>
@@ -42,13 +42,31 @@ int main(int argc, char **argv)
     ros_com->init();
 
 
-    bool forward = false;    
+    bool forward = true;    
     std::string port = "udp://:14540";
 
+    // Initialize parameters in main
     ros_com->ros_node->declare_parameter("port", "udp://:14540");
     ros_com->ros_node->declare_parameter("forwarding", false);
+    ros_com->ros_node->declare_parameter("data_rates.position_ned", 20.0);
+    ros_com->ros_node->declare_parameter("data_rates.position_gps", 1.0);
+    ros_com->ros_node->declare_parameter("data_rates.attitude", 20.0);
+    ros_com->ros_node->declare_parameter("data_rates.odometry", 20.0);
+
+
+    // Get the values of the necessary parameters
     port = ros_com->ros_node->get_parameter("port").as_string();
     forward = ros_com->ros_node->get_parameter("forwarding").as_bool();
+
+
+
+    // initialize proper rates...
+    mav_com->set_att_rate(ros_com->ros_node->get_parameter("data_rates.attitude").as_double());
+    mav_com->set_gps_rate(ros_com->ros_node->get_parameter("data_rates.position_gps").as_double());
+    mav_com->set_ned_rate (ros_com->ros_node->get_parameter("data_rates.position_ned").as_double());
+    mav_com->set_odom_rate(ros_com->ros_node->get_parameter("data_rates.odometry").as_double());
+
+
 
 
     //rx_connection = 'serial:///dev/ttyUSB0:460800'

@@ -29,6 +29,8 @@ private:
     Eigen::Vector2d pose_ref;
     float tangent_heading;
 
+    float surge_ref = 0.0;
+
     bool is_active=false;
 
    float max_surge = 5;
