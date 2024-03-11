@@ -27,16 +27,16 @@ find_package(std_msgs REQUIRED)
 
 set(msg_files
   "msg/State.msg"
-  "msg/Manualactuatorsignals.msg"
-  "msg/Offboarddirectcontrol.msg"
+  "msg/ManualActuatorSignals.msg"
+  "msg/OffboardDirectControl.msg"
   "msg/Offboardattituderate.msg"
-  "msg/Innerloopreferences.msg"
-  "msg/Pathreferences.msg"
+  "msg/InnerLoopReferences.msg"
+  "msg/PathReferences.msg"
   )
 
 set(srv_files
    "srv/Arm.srv"
-   "srv/Pidgains.srv"
+   "srv/PidGains.srv"
   )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

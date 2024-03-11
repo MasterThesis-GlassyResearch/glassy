@@ -1,7 +1,5 @@
 #include "rclcpp/rclcpp.hpp"
 #include "PathManagementNode.h"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
-#include "glassy_interfaces/msg/innerloopreferences.hpp"
 #include "glassy_interfaces/msg/state.hpp"
 #include <unistd.h>
 #include <iostream>
@@ -35,7 +33,6 @@ void PathManagementNode::setPath(std::string file_location){
     std::vector<std::string> FileContents;
     try
     {
-        // myfile.open();
         if (myfile.is_open())
         {
             while(getline(myfile, line)) {
@@ -224,7 +221,7 @@ void PathManagementNode::init(){
     this->state_subscription = this->pathmanagement_node->create_subscription<glassy_interfaces::msg::State>("state_vehicle", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
 
     // initialize publisher
-    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_interfaces::msg::Pathreferences>("path_refs", 1);
+    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_interfaces::msg::PathReferences>("path_refs", 1);
 
     // initialize timer, -> dictates when to publish
     this->timer = this->pathmanagement_node->create_wall_timer(100ms, std::bind(&PathManagementNode::ref_publish, this));

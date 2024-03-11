@@ -1,17 +1,6 @@
-#include <mavsdk/mavsdk.h>
 #include <MavsdkNode.h>
-#include <mavsdk/plugins/action/action.h>
-#include <mavsdk/plugins/telemetry/telemetry.h>
-#include <mavsdk/plugins/manual_control/manual_control.h>
-#include <unistd.h>
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <future>
-#include <cmath>
-#include "rclcpp/rclcpp.hpp"
-#include "std_msgs/msg/string.hpp"
-#include "glassy_interfaces/srv/arm.hpp"
+
+
 
 using std::chrono::milliseconds;
 using std::chrono::seconds;

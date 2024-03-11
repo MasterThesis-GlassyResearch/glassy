@@ -14,6 +14,7 @@
 
   <depend>rclcpp</depend>
   <depend>glassy_interfaces</depend>
+  <depend>std_srvs</depend>
 
   <exec_depend>ros2launch</exec_depend>
 

@@ -6,7 +6,7 @@
 #include <thread>
 #include <future>
 #include "rclcpp/rclcpp.hpp"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
+#include "glassy_interfaces/msg/offboard_direct_control.hpp"
 #include "glassy_interfaces/srv/arm.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 
@@ -89,11 +89,11 @@ public:
     void joystick_subscription_callback(const sensor_msgs::msg::Joy::SharedPtr msg);
 
 
-    glassy_interfaces::msg::Offboarddirectcontrol direct_actuator_msg;
+    glassy_interfaces::msg::OffboardDirectControl direct_actuator_msg;
     glassy_interfaces::srv::Arm arm_disarm_svr_msg;
 
     // publish directly to actuators
-    rclcpp::Publisher<glassy_interfaces::msg::Offboarddirectcontrol>::SharedPtr glassy_interface_publisher;
+    rclcpp::Publisher<glassy_interfaces::msg::OffboardDirectControl>::SharedPtr glassy_interface_publisher;
 
     //client, will intercact with the arm/ disarm service
     rclcpp::Client<glassy_interfaces::srv::Arm>::SharedPtr arm_disarm_client;

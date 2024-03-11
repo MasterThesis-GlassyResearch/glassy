@@ -7,8 +7,8 @@
 #include <future>
 #include "../control_lib/LOSouterloop.h"
 
-#include "glassy_interfaces/msg/innerloopreferences.hpp"
-#include "glassy_interfaces/msg/pathreferences.hpp"
+#include "glassy_interfaces/msg/inner_loop_references.hpp"
+#include "glassy_interfaces/msg/path_references.hpp"
 #include "glassy_interfaces/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <eigen3/Eigen/Core>
@@ -55,8 +55,8 @@ public:
 
 
     // subscribe to topic comming from references (outer loop)
-    rclcpp::Subscription<glassy_interfaces::msg::Pathreferences>::SharedPtr path_subscription;
-    void path_subscription_callback(const glassy_interfaces::msg::Pathreferences::SharedPtr msg);
+    rclcpp::Subscription<glassy_interfaces::msg::PathReferences>::SharedPtr path_subscription;
+    void path_subscription_callback(const glassy_interfaces::msg::PathReferences::SharedPtr msg);
 
     // subscribe to state
     rclcpp::Subscription<glassy_interfaces::msg::State>::SharedPtr state_subscription;
@@ -66,10 +66,10 @@ public:
     
     
 
-    glassy_interfaces::msg::Innerloopreferences inner_loop_ref_msg;
+    glassy_interfaces::msg::InnerLoopReferences inner_loop_ref_msg;
 
     // publish directly to actuators
-    rclcpp::Publisher<glassy_interfaces::msg::Innerloopreferences>::SharedPtr reference_publisher;
+    rclcpp::Publisher<glassy_interfaces::msg::InnerLoopReferences>::SharedPtr reference_publisher;
 
     //timer
     rclcpp::TimerBase::SharedPtr timer;

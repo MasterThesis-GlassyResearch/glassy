@@ -1,15 +1,5 @@
 #include <MavsdkNode.h>
 #include <RosNode.h>
-#include <unistd.h>
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <future>
-#include "rclcpp/rclcpp.hpp"
-#include "glassy_interfaces/srv/arm.hpp"
-#include "glassy_interfaces/msg/manualactuatorsignals.hpp"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
-#include "glassy_interfaces/msg/offboardattituderate.hpp"
 
 
 using std::chrono::milliseconds;
@@ -30,11 +20,11 @@ RosNode::RosNode(std::shared_ptr<rclcpp::Node> node) : ros_node(node)
 //-------------------------------------------
 //          Subscribers Callback
 //-------------------------------------------
-void RosNode::manual_actuator_control_callback(const glassy_interfaces::msg::Manualactuatorsignals::SharedPtr msg){
+void RosNode::manual_actuator_control_callback(const glassy_interfaces::msg::ManualActuatorSignals::SharedPtr msg){
     this->mav_node->manual_mode_actuator_control(msg->steering, msg->throttle);
 }
 
-void RosNode::offboard_direct_control_callback(const glassy_interfaces::msg::Offboarddirectcontrol::SharedPtr msg){
+void RosNode::offboard_direct_control_callback(const glassy_interfaces::msg::OffboardDirectControl::SharedPtr msg){
     std::cout<<msg->rudder;
     std::cout<<msg->thrust;
     this->mav_node->offboard_direct_control(msg->rudder, msg->thrust);
@@ -126,7 +116,7 @@ void RosNode::init()
     // setup publishers and subscribers...
     if(this->manual_actuators_subscription)
     {
-        this->manual_actuator_subscriber = this->ros_node->create_subscription<glassy_interfaces::msg::Manualactuatorsignals>("manual_actuator_signals", 1, std::bind(&RosNode::manual_actuator_control_callback, this, _1));
+        this->manual_actuator_subscriber = this->ros_node->create_subscription<glassy_interfaces::msg::ManualActuatorSignals>("manual_actuator_signals", 1, std::bind(&RosNode::manual_actuator_control_callback, this, _1));
     }
     if(this->attitude_rate_offboard_subscription)
     {
@@ -134,7 +124,7 @@ void RosNode::init()
     }
     if (direct_offboard_subscription)
     {
-        this->offboard_direct_subscriber = this->ros_node->create_subscription<glassy_interfaces::msg::Offboarddirectcontrol>("offboard_direct_signals", 1, std::bind(&RosNode::offboard_direct_control_callback, this, _1));
+        this->offboard_direct_subscriber = this->ros_node->create_subscription<glassy_interfaces::msg::OffboardDirectControl>("offboard_direct_signals", 1, std::bind(&RosNode::offboard_direct_control_callback, this, _1));
     }
 
     if (this->state_publishing)

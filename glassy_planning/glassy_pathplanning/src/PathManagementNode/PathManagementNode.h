@@ -6,8 +6,9 @@
 #include <thread>
 #include <future>
 
-#include "glassy_interfaces/msg/pathreferences.hpp"
+#include "glassy_interfaces/msg/path_references.hpp"
 #include "glassy_interfaces/msg/state.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 #include "../PathTypes/Line.h"
@@ -85,13 +86,21 @@ public:
     void state_subscription_callback(const glassy_interfaces::msg::State::SharedPtr msg);
 
 
-    glassy_interfaces::msg::Pathreferences pathref_msg;
+    glassy_interfaces::msg::PathReferences pathref_msg;
 
     // publish directly to actuators
-    rclcpp::Publisher<glassy_interfaces::msg::Pathreferences>::SharedPtr path_publisher;
+    rclcpp::Publisher<glassy_interfaces::msg::PathReferences>::SharedPtr path_publisher;
 
     //timer
     rclcpp::TimerBase::SharedPtr timer;
+
+    // services...
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_path_following;
+    // rclcpp::Service<common_interfaces::srv::SetBool> activate_path_following;
+
+
+
+
 
     void init();
 

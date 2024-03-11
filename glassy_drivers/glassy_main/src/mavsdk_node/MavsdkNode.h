@@ -35,7 +35,7 @@ private:
     void publish_attitude(mavsdk::Telemetry::EulerAngle euler_angles);
     void publish_ned_position(mavsdk::Telemetry::PositionVelocityNed position_velocity);
 
-    // message rates
+    // message rates and default values
     double odom_rate=20;
     double att_rate=20;
     double ned_rate=20;

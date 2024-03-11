@@ -1,7 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "PathFollowingNode.h"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
-#include "glassy_interfaces/msg/innerloopreferences.hpp"
+#include "glassy_interfaces/msg/inner_loop_references.hpp"
 #include "glassy_interfaces/msg/state.hpp"
 #include <unistd.h>
 #include <iostream>
@@ -53,7 +52,7 @@ void PathFollowingNode::ref_publish(){
 
 
 
-void PathFollowingNode::path_subscription_callback(const glassy_interfaces::msg::Pathreferences::SharedPtr msg){
+void PathFollowingNode::path_subscription_callback(const glassy_interfaces::msg::PathReferences::SharedPtr msg){
     // Set the correct references to track...
     this->pose_ref(0) = msg->x_ref;
     this->pose_ref(1) = msg->y_ref;
@@ -80,13 +79,13 @@ void PathFollowingNode::init(){
 
 
     // subscribe to the reference topic
-    this->path_subscription = this->pathfollowing_node->create_subscription<glassy_interfaces::msg::Pathreferences>("path_refs", 1, std::bind(&PathFollowingNode::path_subscription_callback, this, _1));
+    this->path_subscription = this->pathfollowing_node->create_subscription<glassy_interfaces::msg::PathReferences>("path_refs", 1, std::bind(&PathFollowingNode::path_subscription_callback, this, _1));
 
     // subscribe to the joystick topic
     this->state_subscription = this->pathfollowing_node->create_subscription<glassy_interfaces::msg::State>("state_vehicle", 1, std::bind(&PathFollowingNode::state_subscription_callback, this, _1));
 
     // initialize publisher
-    this->reference_publisher = this->pathfollowing_node->create_publisher<glassy_interfaces::msg::Innerloopreferences>("inner_loop_ref", 1);
+    this->reference_publisher = this->pathfollowing_node->create_publisher<glassy_interfaces::msg::InnerLoopReferences>("inner_loop_ref", 1);
 
     this->timer = this->pathfollowing_node->create_wall_timer(100ms, std::bind(&PathFollowingNode::ref_publish, this));
 

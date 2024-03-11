@@ -1,15 +1,4 @@
-
-#include "sensor_msgs/msg/joy.hpp"
-#include "rclcpp/rclcpp.hpp"
 #include "JoyControlNode.h"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
-#include "glassy_interfaces/srv/arm.hpp"
-#include <unistd.h>
-#include <iostream>
-#include <chrono>
-#include <thread>
-#include <future>
-#include <stdlib.h>
 
 using namespace std::placeholders;
 
@@ -103,12 +92,12 @@ void JoyControlNode::joystick_subscription_callback(const sensor_msgs::msg::Joy:
         else if(this->joystick_mode==FULL_CONTROL){
             this->thrust_gain+=this->increments_const_val;
             this->thrust_gain= std::min(this->thrust_gain, 1.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = ",this->thrust_gain);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = %.2f",this->thrust_gain);
         }
         else if(this->joystick_mode==RUDDER_GAIN){
             this->rudder_gain+=this->increments_const_val;
             this->rudder_gain= std::min(this->rudder_gain, 1.f);
-            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value = ",this->rudder_gain);
+            RCLCPP_INFO(this->joy_glassy_node->get_logger(), "Current Thrust Gain Value =  %.2f",this->rudder_gain);
         }
         this->keep_track_button_pressed(&(this->const_val_inc_dec_previous_value), 1);
     }
@@ -272,6 +261,6 @@ void JoyControlNode::init(){
     this->joystick_input_subscription = this->joy_glassy_node->create_subscription<sensor_msgs::msg::Joy>("joy", 1, std::bind(&JoyControlNode::joystick_subscription_callback, this, _1));
 
     // initialize publisher
-    this->glassy_interface_publisher = this->joy_glassy_node->create_publisher<glassy_interfaces::msg::Offboarddirectcontrol>("offboard_direct_signals", 1);
+    this->glassy_interface_publisher = this->joy_glassy_node->create_publisher<glassy_interfaces::msg::OffboardDirectControl>("offboard_direct_signals", 1);
 
 }

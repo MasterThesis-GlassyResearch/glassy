@@ -12,11 +12,16 @@
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "glassy_interfaces/srv/arm.hpp"
-#include "glassy_interfaces/msg/manualactuatorsignals.hpp"
-#include "glassy_interfaces/msg/offboarddirectcontrol.hpp"
+#include "glassy_interfaces/msg/manual_actuator_signals.hpp"
+#include "glassy_interfaces/msg/offboard_direct_control.hpp"
 #include "glassy_interfaces/msg/offboardattituderate.hpp"
 #include <glassy_interfaces/msg/state.hpp>
 
+
+
+/*-------------------------
+    Class definition
+---------------------------*/
 
 class MavsdkNode;
 class RosNode
@@ -39,12 +44,12 @@ public:
     rclcpp::Service<glassy_interfaces::srv::Arm>::SharedPtr offboard_start_stop_service;
 
     // subscribers
-    rclcpp::Subscription<glassy_interfaces::msg::Manualactuatorsignals>::SharedPtr manual_actuator_subscriber;
-    rclcpp::Subscription<glassy_interfaces::msg::Offboarddirectcontrol>::SharedPtr offboard_direct_subscriber;
+    rclcpp::Subscription<glassy_interfaces::msg::ManualActuatorSignals>::SharedPtr manual_actuator_subscriber;
+    rclcpp::Subscription<glassy_interfaces::msg::OffboardDirectControl>::SharedPtr offboard_direct_subscriber;
     rclcpp::Subscription<glassy_interfaces::msg::Offboardattituderate>::SharedPtr offboard_attitude_rate_subscriber;
 
-    void manual_actuator_control_callback(const glassy_interfaces::msg::Manualactuatorsignals::SharedPtr msg);
-    void offboard_direct_control_callback(const glassy_interfaces::msg::Offboarddirectcontrol::SharedPtr msg);
+    void manual_actuator_control_callback(const glassy_interfaces::msg::ManualActuatorSignals::SharedPtr msg);
+    void offboard_direct_control_callback(const glassy_interfaces::msg::OffboardDirectControl::SharedPtr msg);
     void offboard_attitude_rate_control_callback(const glassy_interfaces::msg::Offboardattituderate::SharedPtr msg);
 
     // publishers
