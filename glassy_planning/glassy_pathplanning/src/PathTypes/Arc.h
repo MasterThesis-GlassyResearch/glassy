@@ -12,8 +12,14 @@ class Arc: public PathBase
 {
 private:
     /* data */
+    Eigen::Vector2d initial_point;
+    Eigen::Vector2d final_point;
+    Eigen::Vector2d center;
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
+    float radius = 0.0;
+
+
     float ini_angle;
     float angle_scale;
     float final_angle;
@@ -47,13 +53,6 @@ public:
 
 
     ~Arc(){};
-
-
-    Eigen::Vector2d initial_point;
-    Eigen::Vector2d final_point;
-    Eigen::Vector2d center;
-    float radius = 0.0;
-
 
 };
 

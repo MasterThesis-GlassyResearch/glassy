@@ -1,7 +1,7 @@
 #include "Arc.h"
 
 Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ):
-center(center_circ), initial_point(start_point), final_point(final_point)
+ initial_point(start_point), final_point(final_point), center(center_circ)
 {
     if(this->initial_point == this->final_point){
         this->is_circle=true;
@@ -19,7 +19,7 @@ center(center_circ), initial_point(start_point), final_point(final_point)
 };
 
     
-Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_scale): center(center_circ), initial_point(start_point), angle_scale(angle_scale) {
+Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_scale): initial_point(start_point), center(center_circ), angle_scale(angle_scale)  {
 
 
     Eigen::Vector2d dif_ini = this->initial_point-this->center;
@@ -33,13 +33,12 @@ Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_s
 
 
 float Arc::getTangHeading(Eigen::Vector2d point){
-
+    (void) point;
     float sign = 0;
     if(this->angle_scale<0){
         sign = 1;
     }
 
-    // return wrapToPi(this->current_tang_heading + sign*M_PI);
     return this->current_tang_heading+ sign*M_PI;
 }
 
@@ -101,10 +100,9 @@ Eigen::Vector2d Arc::getClosestPoint(Eigen::Vector2d point){
     }
 
 
-    std::cout<<" Debug: gamma = " << corresponding_gamma << " angle = " << angle << std::endl;
-    std::cout<<" Debug: ini_angle = " << this->ini_angle << " angle = " << angle << std::endl;
+    // std::cout<<" Debug: gamma = " << corresponding_gamma << " angle = " << angle << std::endl;
+    // std::cout<<" Debug: ini_angle = " << this->ini_angle << " angle = " << angle << std::endl;
 
-    // DO NOT FORGET atan(YYYY/XXXX)
     this->current_tang_heading = atan2(cos(angle), -sin(angle));
 
 

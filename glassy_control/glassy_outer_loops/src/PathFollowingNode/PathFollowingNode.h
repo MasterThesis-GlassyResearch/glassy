@@ -9,7 +9,9 @@
 
 #include "glassy_interfaces/msg/inner_loop_references.hpp"
 #include "glassy_interfaces/msg/path_references.hpp"
+#include "glassy_interfaces/srv/los_params.hpp"
 #include "glassy_interfaces/msg/state.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <eigen3/Eigen/Core>
 
@@ -68,13 +70,31 @@ public:
 
     glassy_interfaces::msg::InnerLoopReferences inner_loop_ref_msg;
 
-    // publish directly to actuators
+    // Publishers ROS2
     rclcpp::Publisher<glassy_interfaces::msg::InnerLoopReferences>::SharedPtr reference_publisher;
 
-    //timer
+    // Timer ROS2
     rclcpp::TimerBase::SharedPtr timer;
 
+    // Services ROS2
+    void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathfollowing;
+    rclcpp::Service<glassy_interfaces::srv::LosParams>::SharedPtr setLOSParams;
+
+
+    // Clients ROS2
+    rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_innerloop_client;
+
+
+    //Initialization Logic
     void init();
+
+
+    /*
+        Activation Logic
+    */
+    void activate();
+    void deactivate();
 
 };
 

@@ -47,8 +47,8 @@ def generate_launch_description():
 
    return LaunchDescription([
       ocean_world,
-      glassy_vehicle,
       glassy_main,
       glassy_joystick,
-      glassy_inner
+      glassy_inner,
+      glassy_vehicle,
    ])

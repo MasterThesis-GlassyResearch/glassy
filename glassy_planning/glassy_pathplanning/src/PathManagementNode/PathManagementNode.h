@@ -8,6 +8,7 @@
 
 #include "glassy_interfaces/msg/path_references.hpp"
 #include "glassy_interfaces/msg/state.hpp"
+#include "glassy_interfaces/srv/set_path.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 
@@ -15,7 +16,7 @@
 #include "../PathTypes/Arc.h"
 #include "../PathTypes/PathBase.h"
 #include "eigen3/Eigen/Core"
-
+#include <fstream>
 
 class PathManagementNode
 {
@@ -28,10 +29,14 @@ private:
 
     Eigen::Vector2d current_pose;
 
-    void correct_home_position();
+    std::string path_file_directory = "/home/joaolehodey/glassy_ws/src/glassy_planning/glassy_pathplanning/PathExamples/";
+
+    bool correct_home_position();
 
 
     bool path_is_set=false;
+
+    bool is_active=false;
 
    float x=0.0;
    float x_ref=0.0;
@@ -95,15 +100,27 @@ public:
     rclcpp::TimerBase::SharedPtr timer;
 
     // services...
-    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_path_following;
-    // rclcpp::Service<common_interfaces::srv::SetBool> activate_path_following;
+    void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathplanning;
 
+    void set_path_srv_callback(const std::shared_ptr<glassy_interfaces::srv::SetPath::Request> request, std::shared_ptr<glassy_interfaces::srv::SetPath::Response> response);
+    rclcpp::Service<glassy_interfaces::srv::SetPath>::SharedPtr set_path_srv;
+
+
+    // clients ...
+    rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathfollowing_client;
 
 
 
 
     void init();
 
+
+    /*
+        Activation Logic
+    */
+    void activate();
+    void deactivate();
 };
 
 #endif

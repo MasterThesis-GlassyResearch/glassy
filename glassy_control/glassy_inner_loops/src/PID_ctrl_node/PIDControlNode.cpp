@@ -26,6 +26,11 @@ PIDControlNode::PIDControlNode(std::shared_ptr<rclcpp::Node> node): pid_glassy_n
 
 void PIDControlNode::direct_actuator_publish(){
 
+    // first check whether or not it is active
+    if(!this->is_active){
+        return;
+    }
+
 
     rclcpp::Time current_time = this->pid_glassy_node->get_clock()->now();
 
@@ -41,16 +46,20 @@ void PIDControlNode::direct_actuator_publish(){
     // Now take care of YAW or YAWRATE
     float pidValYaw =0.0;
     if(this->ctrlType == SURGE_YAW){
+
+        // take care of ensuring shortest way to desired yaw
         if(this->yaw_ref-this->yaw>M_PI){
             this->yaw +=2*M_PI;
         } else if(this->yaw_ref-this->yaw<-M_PI){
             this->yaw -=2*M_PI;
         }
 
-        pidValYaw = this->yawPIDCtrl.computePIDOutput(this->yaw, this->yaw_ref, duration.nanoseconds()/10e9, true);
+        pidValYaw = this->yawPIDCtrl.computePIDOutput(this->yaw, this->yaw_ref, duration.nanoseconds()/10e9, false);
     } 
-    else{
-        // pidValYaw = this->yawRatePIDCtrl.computePIDOutput(this->yawRate, this->yawRate_ref, duration.nanoseconds()/10e9, false);
+    else if(this->ctrlType == SURGE_YAWRATE){
+        pidValYaw = this->yawRatePIDCtrl.computePIDOutput(this->yawRate, this->yawRate_ref, duration.nanoseconds()/10e9, false);
+    } else{
+        pidValYaw=0.0;
     }
 
 
@@ -60,20 +69,18 @@ void PIDControlNode::direct_actuator_publish(){
         ADD THE 'CANCELLING PART'
     ----------------------------*/
 
-    
 
+    //FIXME THIS IS VERY IMPORTANT
 
     
-    this->direct_actuator_msg.rudder = pidValYaw;
+    /* --------------------------
+        Publish to the actuators
+    ----------------------------*/
+
     this->direct_actuator_msg.thrust = std::min(std::max( pidValSurge, 0.f), 1.f);
     this->direct_actuator_msg.rudder = std::min(std::max( pidValYaw, -1.f), 1.f);
 
     this->direct_actuator_msg.header.stamp = current_time;
-
-
-
-
-
     this->actuator_publisher->publish(this->direct_actuator_msg);
 }   
 
@@ -120,7 +127,39 @@ void PIDControlNode::update_gains_yawRate_callback(const std::shared_ptr<glassy_
     this->yawRatePIDCtrl.reset_integral();
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Yaw Rate PID gains set to: kp = %f, ki = %f, kd = %f", request->kp, request->ki, request->kd);
 }
+void PIDControlNode::activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, const std::shared_ptr<std_srvs::srv::SetBool::Response> response ){
+    (void) response;
+    if(request->data){
+        this->activate();
+        std::cout<<"STARTED INNER LOOP SUCCESSFULLY"<<std::endl;
+    } else{
+        this->deactivate();
+    }
+}
 
+
+
+
+/*-----------------------------------
+    Activate and deactivate logic
+------------------------------------*/
+
+
+void PIDControlNode::activate(){
+    this->yawPIDCtrl.full_reset();
+    this->yawRatePIDCtrl.full_reset();
+    this->surgePIDCtrl.full_reset();
+
+    std::cout<< "STARTED INNER LOOP SUCCESSFULLY"<< std::endl;
+
+    this->is_active=true;
+}
+void PIDControlNode::deactivate(){
+    this->is_active=false;
+    this->yawPIDCtrl.full_reset();
+    this->yawRatePIDCtrl.full_reset();
+    this->surgePIDCtrl.full_reset();
+}
 
 
 /*---------------------------------
@@ -173,9 +212,12 @@ void PIDControlNode::init(){
 
     // Services
     this->change_gains_surge = this->pid_glassy_node->create_service<glassy_interfaces::srv::PidGains>("pid_gains_surge", std::bind(&PIDControlNode::update_gains_surge_callback, this, _1, _2));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service Ready...");
     this->change_gains_yaw = this->pid_glassy_node->create_service<glassy_interfaces::srv::PidGains>("pid_gains_yaw", std::bind(&PIDControlNode::update_gains_yaw_callback, this, _1, _2));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service Ready...");
     this->change_gains_yawRate = this->pid_glassy_node->create_service<glassy_interfaces::srv::PidGains>("pid_gains_yaw_rate", std::bind(&PIDControlNode::update_gains_yawRate_callback, this, _1, _2));
-   
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Service Ready...");
+    this->activate_deactivate_inner_loop = this->pid_glassy_node->create_service<std_srvs::srv::SetBool>("activate_deactivate_innerloop", std::bind(&PIDControlNode::activate_deactivate_srv_callback, this, _1, _2));
    
    
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Inner Loops ready...");

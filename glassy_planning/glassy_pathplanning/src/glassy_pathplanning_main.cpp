@@ -18,7 +18,7 @@ int main(int argc, char ** argv)
 
     std::shared_ptr<PathManagementNode> path_man_com = std::make_shared<PathManagementNode>(nh);
 
-    path_man_com->init();
+    // path_man_com->init();
 
     rclcpp::spin(nh);
     rclcpp::shutdown();

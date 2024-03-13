@@ -27,7 +27,7 @@ protected:
 
     // integral value
     float integral = 0.0;
-    float prev_error= 0.0;
+    float prev_error= NAN;
 
     // maybe will be used
     float prev_time = 0.0;
@@ -47,6 +47,8 @@ public:
 
     void reset_integral();
     void set_gains(float kp, float ki, float kd);
+    void set_integral_max_min(float max, float min);
+    void full_reset();
     float computePIDOutput(float current_val, float ref_val, float duration, int debug);
 
     void enable(bool yes);

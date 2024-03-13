@@ -20,6 +20,7 @@ Line::Line(Eigen::Vector2d start_point, Eigen::Vector2d final_point): initial_po
 }
 
 float Line::getTangHeading(Eigen::Vector2d point){
+    (void) point;
     return this->line_heading;
 };
 

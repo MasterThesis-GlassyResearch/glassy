@@ -68,6 +68,34 @@ void PathFollowingNode::state_subscription_callback(const glassy_interfaces::msg
 }
 
 
+void PathFollowingNode::activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response){
+    (void) response;
+    auto request_il = std::make_shared<std_srvs::srv::SetBool::Request>();
+    if(request->data){
+        this->activate();
+        request_il->data = true;
+        std::cout<<"STARTED PATH FOLLOWING NICELLY"<<std::endl;
+    } else{
+        request_il->data = false;
+        this->deactivate();
+    }
+    this->activate_deactivate_innerloop_client->async_send_request(request_il);
+}
+
+
+
+void PathFollowingNode::activate(){
+    this->is_active=true;
+    //FIXME add integrator/ integrator reset
+}
+void PathFollowingNode::deactivate(){
+    this->is_active=false;
+}
+
+
+
+
+
 // for now a simple initialization, parameters may be added in the future
 void PathFollowingNode::init(){
 
@@ -88,6 +116,14 @@ void PathFollowingNode::init(){
     this->reference_publisher = this->pathfollowing_node->create_publisher<glassy_interfaces::msg::InnerLoopReferences>("inner_loop_ref", 1);
 
     this->timer = this->pathfollowing_node->create_wall_timer(100ms, std::bind(&PathFollowingNode::ref_publish, this));
+
+
+    // Initialize the services
+    this->activate_deactivate_pathfollowing = this->pathfollowing_node->create_service<std_srvs::srv::SetBool>("activate_deactivate_path_following", std::bind(&PathFollowingNode::activate_deactivate_srv_callback, this, _1, _2));
+    
+
+    // Initialize the clients
+    this->activate_deactivate_innerloop_client = this->pathfollowing_node->create_client<std_srvs::srv::SetBool>("activate_deactivate_innerloop");
 
     std::cout<<"initialized correctly..."<<std::endl;
 }

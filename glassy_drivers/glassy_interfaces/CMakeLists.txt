@@ -22,6 +22,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 
 
@@ -32,18 +33,18 @@ set(msg_files
   "msg/Offboardattituderate.msg"
   "msg/InnerLoopReferences.msg"
   "msg/PathReferences.msg"
+  # "msg/*"
   )
 
 set(srv_files
    "srv/Arm.srv"
    "srv/PidGains.srv"
+   "srv/SetPath.srv"
+   "srv/LosParams.srv"
+   "srv/SetLimits.srv"
   )
 
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-  ${srv_files}
-  DEPENDENCIES std_msgs
-)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -55,6 +56,12 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-ament_export_dependencies(rosidl_default_runtime)
+# ament_export_dependencies(rosidl_default_runtime)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  ${msg_files}
+  ${srv_files}
+  DEPENDENCIES geometry_msgs std_msgs std_srvs
+)
 
 ament_package()

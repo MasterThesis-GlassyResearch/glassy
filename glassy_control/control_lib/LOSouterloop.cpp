@@ -21,9 +21,14 @@ std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::
 
     Eigen::Vector2d error_path_coord =  rot*(pose - pose_ref);
 
+    // float duration = 0.0;
+    // this->integral_val = this->integral_val+ duration*(this->look_ahead_dist*(error_path_coord(1))/((error_path_coord(1) +
+    //  this->look_ahead_dist)+ this->look_ahead_dist*this->look_ahead_dist));
+    //FIXME add integral stuff
+
     this->references[0] = speed;
 
-    float heading_ref = fmod((tangent_heading + atan(-error_path_coord(1)/look_ahead_dist)),(2*M_PI));
+    float heading_ref = fmod((tangent_heading + atan(-(error_path_coord(1)+ this->integral_val*this->sigma)/look_ahead_dist)),(2*M_PI));
     if (heading_ref < 0){
         heading_ref += 2*M_PI;
     }

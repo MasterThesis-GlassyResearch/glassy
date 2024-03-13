@@ -16,6 +16,13 @@ def generate_launch_description():
          get_package_share_directory('glassy_simulation'), 'launch'),
          '/ocean_world.launch.py'])
       )
+   
+   expo_world = IncludeLaunchDescription(
+      PythonLaunchDescriptionSource([os.path.join(
+         get_package_share_directory('glassy_simulation'), 'launch'),
+         '/expo_world.launch.py'])
+      )
+   
    glassy_vehicle = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('glassy_simulation'), 'launch'),
@@ -38,8 +45,8 @@ def generate_launch_description():
       )
 
    return LaunchDescription([
-      ocean_world,
-      glassy_vehicle,
+      expo_world,
       glassy_main,
-      glassy_joystick
+      glassy_joystick,
+      glassy_vehicle,
    ])

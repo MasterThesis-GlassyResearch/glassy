@@ -10,6 +10,8 @@ class Line: public PathBase
 {
 private:
     /* data */
+    Eigen::Vector2d initial_point;
+    Eigen::Vector2d final_point;
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
 
@@ -26,8 +28,7 @@ public:
 
     ~Line();
 
-    Eigen::Vector2d initial_point;
-    Eigen::Vector2d final_point;
+
 
 
 };

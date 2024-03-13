@@ -5,12 +5,13 @@
 #include <chrono>
 #include <thread>
 #include <future>
-#include "../control_lib/PidController.h"
+#include "./../control_lib/PidController.h"
 
 #include "glassy_interfaces/msg/offboard_direct_control.hpp"
 #include "glassy_interfaces/msg/inner_loop_references.hpp"
 #include "glassy_interfaces/msg/state.hpp"
 #include "glassy_interfaces/srv/pid_gains.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 
 
@@ -80,6 +81,7 @@ public:
     rclcpp::Service<glassy_interfaces::srv::PidGains>::SharedPtr change_gains_surge;
     rclcpp::Service<glassy_interfaces::srv::PidGains>::SharedPtr change_gains_yaw;
     rclcpp::Service<glassy_interfaces::srv::PidGains>::SharedPtr change_gains_yawRate;
+    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_inner_loop;
     
 
     // service callbacks
@@ -87,10 +89,23 @@ public:
     void update_gains_yaw_callback(const std::shared_ptr<glassy_interfaces::srv::PidGains::Request> request, std::shared_ptr<glassy_interfaces::srv::PidGains::Response> response);
     void update_gains_yawRate_callback(const std::shared_ptr<glassy_interfaces::srv::PidGains::Request> request, std::shared_ptr<glassy_interfaces::srv::PidGains::Response> response);
 
+    void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
+
+
+
+
+
     void init();
 
-    // if false, other sources can publish, this avoids conflicts -> maybe //TODO
-    bool direct_actuator_publishing;
+
+
+    /*-----------------------------------
+        Activate and deactivate logic
+    ------------------------------------*/
+
+    bool is_active=false;
+    void activate();
+    void deactivate();
 
 };
 
