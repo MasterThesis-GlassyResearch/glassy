@@ -49,7 +49,10 @@ void PidController::full_reset(){
     this->prev_error= NAN;
 }
 
-
+void PidController::set_integral_max_min(float max, float min){
+    this->max_integral_val=max;
+    this->min_integral_val=min;
+}
 
 
 
@@ -69,7 +72,9 @@ float PidController::computePIDOutput(float current_val, float ref_val, float du
     float Pterm = error*this->p_gain;
 
     // compute integral action
-    this->integral = this->clipping(this->integral+duration*error, this->max_integral_val, this->min_integral_val);
+    if(!std::isnan(this->prev_error)){
+        this->integral = this->clipping(this->integral+duration*error, this->max_integral_val, this->min_integral_val);
+    }
     float Iterm = this->integral*this->i_gain;
 
     // compute derivative action

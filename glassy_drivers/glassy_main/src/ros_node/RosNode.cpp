@@ -27,7 +27,12 @@ void RosNode::manual_actuator_control_callback(const glassy_interfaces::msg::Man
 void RosNode::offboard_direct_control_callback(const glassy_interfaces::msg::OffboardDirectControl::SharedPtr msg){
     std::cout<<msg->rudder;
     std::cout<<msg->thrust;
-    this->mav_node->offboard_direct_control(msg->rudder, msg->thrust);
+
+    float thrust_limited = std::min(std::max(msg->thrust, this->min_thrust), this->max_thrust);
+    float rudder_limited = std::min(std::max(msg->rudder, this->min_rudder), this->max_rudder);
+
+    // this->mav_node->offboard_direct_control(msg->rudder, msg->thrust);
+    this->mav_node->offboard_direct_control(rudder_limited, thrust_limited);
 }
 
 void RosNode::offboard_attitude_rate_control_callback(const glassy_interfaces::msg::Offboardattituderate::SharedPtr msg){
@@ -88,6 +93,21 @@ void RosNode::offboard_start_stop(const std::shared_ptr<glassy_interfaces::srv::
 }
 
 
+
+
+void RosNode::set_thrust_limits_callback(const std::shared_ptr<glassy_interfaces::srv::SetLimits::Request> request, std::shared_ptr<glassy_interfaces::srv::SetLimits::Response> response){
+    (void) response;
+    this->max_thrust=request->max_value;
+    this->min_thrust=request->min_value;
+}
+
+void RosNode::set_rudder_limits_callback(const std::shared_ptr<glassy_interfaces::srv::SetLimits::Request> request, std::shared_ptr<glassy_interfaces::srv::SetLimits::Response> response){
+    (void) response;
+    this->max_rudder=request->max_value;
+    this->min_rudder=request->min_value;
+}
+
+
 //-------------------------------------------
 //          Node Initialization
 //-------------------------------------------
@@ -104,13 +124,22 @@ void RosNode::init()
     this->attitude_rate_offboard_subscription = this->ros_node->get_parameter("subscriptions.offboard_attitude_rate").as_bool();
     this->manual_actuators_subscription = this->ros_node->get_parameter("subscriptions.manual_control").as_bool();
 
-    // binding arming and disarming service to the node
+    /*
+            INITIALIZE SERVICES
+    */
     this->arm_disarm_service =
         this->ros_node->create_service<glassy_interfaces::srv::Arm>("arm_disarm", std::bind(&RosNode::arm_disarm, this, _1, _2));
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Arm Disarm Service Ready...");
 
     this->offboard_start_stop_service = this->ros_node->create_service<glassy_interfaces::srv::Arm>("start_stop_offboard", std::bind(&RosNode::offboard_start_stop, this, _1, _2));
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Start/Stop Offboard Service Ready...");
+
+    this->set_thrust_limits = this->ros_node->create_service<glassy_interfaces::srv::SetLimits>("set_thrust_limits", std::bind(&RosNode::set_thrust_limits_callback, this, _1, _2));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Set Thrust Limits Service Ready...");
+
+    this->set_rudder_limits = this->ros_node->create_service<glassy_interfaces::srv::SetLimits>("set_rudder_limits", std::bind(&RosNode::set_rudder_limits_callback, this, _1, _2));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Set Rudder Limits Service Ready...");
+
 
 
     // setup publishers and subscribers...

@@ -48,10 +48,10 @@ int main(int argc, char **argv)
     // Initialize parameters in main
     ros_com->ros_node->declare_parameter("port", "udp://:14540");
     ros_com->ros_node->declare_parameter("forwarding", false);
-    ros_com->ros_node->declare_parameter("data_rates.position_ned", 20.0);
+    ros_com->ros_node->declare_parameter("data_rates.position_ned", 5.0);
     ros_com->ros_node->declare_parameter("data_rates.position_gps", 1.0);
-    ros_com->ros_node->declare_parameter("data_rates.attitude", 20.0);
-    ros_com->ros_node->declare_parameter("data_rates.odometry", 20.0);
+    ros_com->ros_node->declare_parameter("data_rates.attitude", 15.0);
+    ros_com->ros_node->declare_parameter("data_rates.odometry", 15.0);
 
 
     // Get the values of the necessary parameters

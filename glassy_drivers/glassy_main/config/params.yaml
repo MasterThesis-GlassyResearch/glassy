@@ -2,7 +2,7 @@
   glassy_main:
     ros__parameters:
       forwarding: true
-      port: "udp://:14540"
+      port: "serial:///dev/ttyUSB0:460800"
       publishers:
         state: true
         battery: false

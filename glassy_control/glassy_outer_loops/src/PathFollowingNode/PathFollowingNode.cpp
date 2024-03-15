@@ -78,18 +78,27 @@ void PathFollowingNode::activate_deactivate_srv_callback(const std::shared_ptr<s
     } else{
         request_il->data = false;
         this->deactivate();
+        std::cout<< "PATH PLANNING STARTED SUCCESSFULLY"<<std::endl;
     }
     this->activate_deactivate_innerloop_client->async_send_request(request_il);
 }
 
+void PathFollowingNode::setLOSParams_callback(const std::shared_ptr<glassy_interfaces::srv::LosParams::Request> request, std::shared_ptr<glassy_interfaces::srv::LosParams::Response> response){
+
+    float look_ahead = request->look_ahead_dist;
+    float sigma = request->sigma;
+
+    response->result = this->LOSPathFollowing.set_params(look_ahead, sigma);
+}
 
 
 void PathFollowingNode::activate(){
     this->is_active=true;
-    //FIXME add integrator/ integrator reset
+    this->LOSPathFollowing.reset_integrator();
 }
 void PathFollowingNode::deactivate(){
     this->is_active=false;
+    this->LOSPathFollowing.reset_integrator();
 }
 
 
@@ -120,7 +129,8 @@ void PathFollowingNode::init(){
 
     // Initialize the services
     this->activate_deactivate_pathfollowing = this->pathfollowing_node->create_service<std_srvs::srv::SetBool>("activate_deactivate_path_following", std::bind(&PathFollowingNode::activate_deactivate_srv_callback, this, _1, _2));
-    
+
+    this->setLOSParams = this->pathfollowing_node->create_service<glassy_interfaces::srv::LosParams>("set_LOS_params", std::bind(&PathFollowingNode::setLOSParams_callback, this, _1, _2));
 
     // Initialize the clients
     this->activate_deactivate_innerloop_client = this->pathfollowing_node->create_client<std_srvs::srv::SetBool>("activate_deactivate_innerloop");

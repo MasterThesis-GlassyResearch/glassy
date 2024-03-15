@@ -24,8 +24,10 @@ void PathManagementNode::setPath(std::string file_location){
 
     this->requested_surge.clear();
     this->path_segments.clear();
+    this->path_index = 0;
 
-    // this->correct_home_position();
+
+    this->correct_home_position();
     std::ifstream myfile(file_location.c_str());
     std::cout<<"my file var created "<<std::endl;
     
@@ -68,9 +70,9 @@ void PathManagementNode::setPath(std::string file_location){
                 try {
 
                     this->path_segments.push_back(std::make_shared<Arc>(
-                        Arc(Eigen::Vector2d(std::stof(line_bits[1])-this->x_correction, std::stof(line_bits[2])-this->y_correction), 
-                        Eigen::Vector2d(std::stof(line_bits[3])-this->x_correction,
-                        std::stof(line_bits[4])-this->y_correction), std::stof(line_bits[5])*M_PI/180)
+                        Arc(Eigen::Vector2d(std::stof(line_bits[1])+this->x_correction, std::stof(line_bits[2])+this->y_correction), 
+                        Eigen::Vector2d(std::stof(line_bits[3])+this->x_correction,
+                        std::stof(line_bits[4])+this->y_correction), std::stof(line_bits[5])*M_PI/180)
                         ));
                     this->requested_surge.push_back(std::stof(line_bits[6]));
 
@@ -82,9 +84,9 @@ void PathManagementNode::setPath(std::string file_location){
                 try {
 
                     this->path_segments.push_back(std::make_shared<Line>(
-                        Line(Eigen::Vector2d(std::stof(line_bits[1])-this->x_correction, std::stof(line_bits[2])-this->y_correction),
-                        Eigen::Vector2d(std::stof(line_bits[3])-this->x_correction,
-                        std::stof(line_bits[4])-this->y_correction))
+                        Line(Eigen::Vector2d(std::stof(line_bits[1])+this->x_correction, std::stof(line_bits[2])+this->y_correction),
+                        Eigen::Vector2d(std::stof(line_bits[3])+this->x_correction,
+                        std::stof(line_bits[4])+this->y_correction))
                         ));
                     this->requested_surge.push_back(std::stof(line_bits[5]));
 
@@ -92,6 +94,9 @@ void PathManagementNode::setPath(std::string file_location){
                     // Conversion failed,
                     std::cout<< "path segment failed to be parsed..." << std::endl;
                 }
+            }
+            else if(line_bits[0]=="loop"){
+                this->loop = true;
             }
     }
 
@@ -135,12 +140,24 @@ void PathManagementNode::ref_publish(){
         if(this->path_index<(int) (this->path_segments.size()-1)){
             this->path_index+=1;
             this->path_segments[this->path_index]->activate();
-        } else{
+        } 
+        else if(this->loop){
+            this->path_index=0;
+            this->path_segments[this->path_index]->activate();
+        }
+        else{
             this->pathref_msg.x_ref = 0.0;
             this->pathref_msg.y_ref = 0.0;   
             this->pathref_msg.is_active = 0;
             this->pathref_msg.path_vel = 0.0;
             this->path_publisher->publish(this->pathref_msg);
+            
+            this->deactivate();
+            auto request_pf = std::make_shared<std_srvs::srv::SetBool::Request>();
+            request_pf->data=false;
+            this->activate_deactivate_pathfollowing_client->async_send_request(request_pf);
+
+            std::cout<<"*****************\nPATH TERMINATED\n*****************"<<std::endl;
             return;
         }
     }
@@ -185,10 +202,10 @@ bool PathManagementNode::correct_home_position(){
 
 
     this->x_correction = R_earth * lat_dif+this->x;
-    this->y_correction = R_earth * lon_dif*cos(this->lat)+this->y;
+    this->y_correction = R_earth * lon_dif*cos(this->home_lat*M_PI/180)+this->y;
 
-    std::cout<<"x_correction difference: "<< lat_dif<<std::endl;
-    std::cout<<"y_correction difference: "<< lon_dif<<std::endl;
+    std::cout<<"x_correction difference: "<< this->x_correction<<std::endl;
+    std::cout<<"y_correction difference: "<< this->y_correction<<std::endl;
     
     return true;
 }
@@ -204,6 +221,8 @@ void PathManagementNode::state_subscription_callback(const glassy_interfaces::ms
 
     this->lat = msg->latitude;
     this->lon = msg->longitude;
+    this->y = msg->east;
+    this->x = msg->north;
 
 }
 
@@ -217,18 +236,20 @@ void PathManagementNode::activate_deactivate_srv_callback(const std::shared_ptr<
     // create a request (to activate or deactuvat«)
     auto request_pf = std::make_shared<std_srvs::srv::SetBool::Request>();
     if(request->data){
-        if(!this->correct_home_position()){
+        // if(!this->correct_home_position()){
+        if(false){
             std::cout<< "UNABLE TO SET HOME POSITION"<<std::endl;
             request_pf->data=false;
             this->deactivate();
         } else{
             this->activate();
             request_pf->data=true;
-            std::cout<< "Path Planning Started Successfully"<<std::endl;
+            std::cout<< "PATH PLANNING STARTED SUCCESSFULLY"<<std::endl;
         }
     } else{
         this->deactivate();
         request_pf->data=false;
+        std::cout<< "PATH PLANNING STOPPED SUCCESSFULLY"<<std::endl;
     }
     this->activate_deactivate_pathfollowing_client->async_send_request(request_pf);
 }
@@ -246,6 +267,7 @@ void PathManagementNode::activate(){
 }
 void PathManagementNode::deactivate(){
     this->is_active=false;
+    this->loop=false;
 }
 
 

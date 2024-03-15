@@ -53,7 +53,7 @@ private:
    float x_correction=0.0;
    float y_correction=0.0;
 
-
+   bool loop=false;
 
 
 

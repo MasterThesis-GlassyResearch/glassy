@@ -36,7 +36,12 @@ public:
         }
         this->look_ahead_dist=look_ahead;
         this->sigma = sigma_int;
+        std::cout<<"PARAMETERS SET SUCCESSFULLY look ahead = "<< this->look_ahead_dist << " --- sigma = "<<this->sigma<<std::endl;
         return true;
+    }
+
+    void reset_integrator(){
+        this->integral_val = 0.0;
     }
 };
 

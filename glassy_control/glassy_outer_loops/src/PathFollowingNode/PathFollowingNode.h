@@ -80,7 +80,7 @@ public:
     void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathfollowing;
     rclcpp::Service<glassy_interfaces::srv::LosParams>::SharedPtr setLOSParams;
-
+    void setLOSParams_callback(const std::shared_ptr<glassy_interfaces::srv::LosParams::Request> request, std::shared_ptr<glassy_interfaces::srv::LosParams::Response> response);
 
     // Clients ROS2
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_innerloop_client;
