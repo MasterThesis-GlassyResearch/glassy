@@ -5,18 +5,21 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <fstream>
+#include <algorithm>
 
-#include "glassy_interfaces/msg/path_references.hpp"
-#include "glassy_interfaces/msg/state.hpp"
-#include "glassy_interfaces/srv/set_path.hpp"
+#include "glassy_msgs/msg/path_references.hpp"
+#include "glassy_msgs/msg/state.hpp"
+#include "glassy_msgs/srv/set_path.hpp"
+#include "glassy_msgs/msg/mission_info.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "MissionTypesPathManager.h"
 
 #include "../PathTypes/Line.h"
 #include "../PathTypes/Arc.h"
 #include "../PathTypes/PathBase.h"
 #include "eigen3/Eigen/Core"
-#include <fstream>
 
 class PathManagementNode
 {
@@ -27,7 +30,7 @@ private:
 
     void ComputePathPointProperties(){};
 
-    Eigen::Vector2d current_pose;
+    Eigen::Vector2d pose_ned;
 
     std::string path_file_directory = "/home/joaolehodey/glassy_ws/src/glassy_planning/glassy_pathplanning/PathExamples/";
 
@@ -38,17 +41,11 @@ private:
 
     bool is_active=false;
 
-   float x=0.0;
-   float x_ref=0.0;
-   float y=0.0;
-   float y_ref=0.0;
-
    float lat = 0.0;
    float lon = 0.0;
 
    float home_lat = 38.766144;
    float home_lon = -9.093334;
-
 
    float x_correction=0.0;
    float y_correction=0.0;
@@ -57,7 +54,7 @@ private:
 
 
 
-   float max_surge = 5;
+   float max_surge = 12;
    float min_surge = 0;
 
    float max_yawrate = 1;
@@ -81,39 +78,35 @@ public:
     ~PathManagementNode(){};
 
     void setPath(std::string file_location);
-    void setPath();
 
     std::shared_ptr<rclcpp::Node> pathmanagement_node;
 
 
     // subscribe to state
-    rclcpp::Subscription<glassy_interfaces::msg::State>::SharedPtr state_subscription;
-    void state_subscription_callback(const glassy_interfaces::msg::State::SharedPtr msg);
+    rclcpp::Subscription<glassy_msgs::msg::State>::SharedPtr state_subscription;
+    void state_subscription_callback(const glassy_msgs::msg::State::SharedPtr msg);
+
+    // subscribe to the mission info
+    rclcpp::Subscription<glassy_msgs::msg::MissionInfo>::SharedPtr mission_info_subscription;
+    void mission_info_subscription_callback(const glassy_msgs::msg::MissionInfo::SharedPtr msg);
 
 
-    glassy_interfaces::msg::PathReferences pathref_msg;
+    glassy_msgs::msg::PathReferences pathref_msg;
 
     // publish directly to actuators
-    rclcpp::Publisher<glassy_interfaces::msg::PathReferences>::SharedPtr path_publisher;
+    rclcpp::Publisher<glassy_msgs::msg::PathReferences>::SharedPtr path_publisher;
 
     //timer
     rclcpp::TimerBase::SharedPtr timer;
 
     // services...
-    void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
-    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathplanning;
-
-    void set_path_srv_callback(const std::shared_ptr<glassy_interfaces::srv::SetPath::Request> request, std::shared_ptr<glassy_interfaces::srv::SetPath::Response> response);
-    rclcpp::Service<glassy_interfaces::srv::SetPath>::SharedPtr set_path_srv;
+    void set_path_srv_callback(const std::shared_ptr<glassy_msgs::srv::SetPath::Request> request, std::shared_ptr<glassy_msgs::srv::SetPath::Response> response);
+    rclcpp::Service<glassy_msgs::srv::SetPath>::SharedPtr set_path_srv;
 
 
-    // clients ...
-    rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathfollowing_client;
-
-
-
-
+    // initialize the node
     void init();
+    int mission_type = glassy_msgs::msg::MissionInfo::MISSION_OFF;
 
 
     /*

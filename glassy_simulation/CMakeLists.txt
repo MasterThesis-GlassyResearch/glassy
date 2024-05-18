@@ -5,6 +5,7 @@ project(glassy_simulation)
 find_package(ament_cmake_auto REQUIRED)
 
 
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
@@ -21,5 +22,9 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+install(
+  PROGRAMS src/start_glassy.bash src/start_dds.bash
+
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

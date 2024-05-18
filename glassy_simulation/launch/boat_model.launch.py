@@ -26,7 +26,7 @@ def generate_launch_description():
     os.makedirs(PX4_RUN_DIR, exist_ok=True)
 
     # Get the PX4-gazebo directory
-    px4_gazebo_dir = os.path.join(PX4_DIR, 'Tools/sitl_gazebo')
+    px4_gazebo_dir = os.path.join(PX4_DIR, 'Tools/simulation/gazebo-classic/sitl_gazebo-classic')
     
     # Get the standard iris drone models inside the PX4 package
     model = os.path.join(px4_gazebo_dir, 'models', vehicle_model, vehicle_model + '.sdf')
@@ -98,7 +98,7 @@ def generate_launch_description():
         
         # Define the environment variables so that gazebo can discover PX4 3D models and plugins
         SetEnvironmentVariable('GAZEBO_PLUGIN_PATH', PX4_DIR + '/build/px4_sitl_default/build_gazebo'),
-        SetEnvironmentVariable('GAZEBO_MODEL_PATH', PX4_DIR + '/Tools/sitl_gazebo/models'),
+        SetEnvironmentVariable('GAZEBO_MODEL_PATH', PX4_DIR + '/Tools/simulation/gazebo-classic/sitl_gazebo-classic/models'),
         SetEnvironmentVariable('PX4_SIM_MODEL', 'boat'),
 
         # Define where to spawn the vehicle (in the inertial frame) 

@@ -21,7 +21,7 @@ find_package(ament_cmake REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_srvs REQUIRED)
-find_package(glassy_interfaces REQUIRED)
+find_package(glassy_msgs REQUIRED)
 find_package (Eigen3 REQUIRED)
 
 
@@ -33,7 +33,7 @@ add_executable(glassy_pathplanning src/glassy_pathplanning_main.cpp ${SOURCE_FIL
 target_compile_features(glassy_pathplanning PRIVATE cxx_std_20)
 target_include_directories(glassy_pathplanning PRIVATE ${EIGEN3_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/PathManagementNode ${CMAKE_CURRENT_SOURCE_DIR}/PathTypes)
 
-ament_target_dependencies(glassy_pathplanning rclcpp sensor_msgs glassy_interfaces std_srvs)
+ament_target_dependencies(glassy_pathplanning rclcpp sensor_msgs glassy_msgs std_srvs)
 
 install(TARGETS glassy_pathplanning
   DESTINATION lib/${PROJECT_NAME})

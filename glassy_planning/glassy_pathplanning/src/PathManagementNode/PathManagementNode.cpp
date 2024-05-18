@@ -8,7 +8,11 @@ using namespace std::placeholders;
     Constructors
 -----------------------------------*/
 
-// class constructor 
+/**
+ * @brief Construct a new Path Management Node:: Path Management Node object
+ * 
+ * @param node 
+ */
 PathManagementNode::PathManagementNode(std::shared_ptr<rclcpp::Node> node): pathmanagement_node(node)
 {
     std::cout<<"Creating Path Management Controller Node...\n";
@@ -20,6 +24,11 @@ PathManagementNode::PathManagementNode(std::shared_ptr<rclcpp::Node> node): path
     Path Setting Logic
 -----------------------------------*/
 
+/**
+ * @brief Set the Path object
+ * 
+ * @param file_location 
+ */
 void PathManagementNode::setPath(std::string file_location){
 
     this->requested_surge.clear();
@@ -78,7 +87,7 @@ void PathManagementNode::setPath(std::string file_location){
 
                 } catch (...) {
                     // Conversion failed,
-                    std::cout<< "path segment failed to be parsed..." << std::endl;
+                    RCLCPP_ERROR(this->pathmanagement_node->get_logger(), "Error in setting path");
                 }
             } else if(line_bits[0]=="line"){
                 try {
@@ -92,7 +101,7 @@ void PathManagementNode::setPath(std::string file_location){
 
                 } catch (...) {
                     // Conversion failed,
-                    std::cout<< "path segment failed to be parsed..." << std::endl;
+                    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Error in setting path");
                 }
             }
             else if(line_bits[0]=="loop"){
@@ -100,37 +109,21 @@ void PathManagementNode::setPath(std::string file_location){
             }
     }
 
-    std::cout<< "finished......." << std::endl;
-    std::cout<< "size of path: "<<this->path_segments.size() <<" : " << this->requested_surge.size()<< std::endl;
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "FINISHED CREATING PATH ... \n PATH SEGMENTS: %ld", this->path_segments.size());
 
     this->path_index = 0;
     this->path_segments[this->path_index]->activate();
     this->path_is_set=true;
 };
 
-void PathManagementNode::setPath(){
-    this->path_segments.push_back(std::make_shared<Line>(Line(Eigen::Vector2d(0.0, 0.0), Eigen::Vector2d(0, 100))));
-    this->requested_surge.push_back(2.f);
-    this->path_segments.push_back(std::make_shared<Arc>(Arc(Eigen::Vector2d(0, 100), Eigen::Vector2d(-20, 100), M_PI)));
-    this->requested_surge.push_back(2.f);
-    this->path_segments.push_back(std::make_shared<Arc>(Arc(Eigen::Vector2d(-40, 100), Eigen::Vector2d(-20, 100), M_PI)));
-    this->requested_surge.push_back(2.f);
-    this->path_segments.push_back(std::make_shared<Arc>(Arc(Eigen::Vector2d(0, 100), Eigen::Vector2d(-20, 100), M_PI)));
-    this->requested_surge.push_back(2.f);
-    this->path_segments.push_back(std::make_shared<Arc>(Arc(Eigen::Vector2d(-40, 100), Eigen::Vector2d(-20, 100), M_PI)));
-    this->requested_surge.push_back(2.f);
-
-    this->path_segments[0]->activate();
-    this->path_index = 0;
-    this->path_is_set=true;
-};
-
-
 /*----------------------------------
     Path Info publishing
 -----------------------------------*/
 
-
+/**
+ * @brief Publish the path information
+ * 
+ */
 void PathManagementNode::ref_publish(){
     if(!path_is_set || !this->is_active){
         return;
@@ -153,15 +146,11 @@ void PathManagementNode::ref_publish(){
             this->path_publisher->publish(this->pathref_msg);
             
             this->deactivate();
-            auto request_pf = std::make_shared<std_srvs::srv::SetBool::Request>();
-            request_pf->data=false;
-            this->activate_deactivate_pathfollowing_client->async_send_request(request_pf);
-
-            std::cout<<"*****************\nPATH TERMINATED\n*****************"<<std::endl;
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "----------- PATH FINISHED -----------\n");
             return;
         }
     }
-    Eigen::Vector2d result = this->path_segments[this->path_index]->getClosestPoint(this->current_pose);
+    Eigen::Vector2d result = this->path_segments[this->path_index]->getClosestPoint(this->pose_ned);
     
     this->pathref_msg.path_segment_index = this->path_index;
     this->pathref_msg.x_ref = result(0);
@@ -172,7 +161,7 @@ void PathManagementNode::ref_publish(){
     std::cout<< "path_seg = " << this->path_index <<std::endl;
 
 
-    this->pathref_msg.tangent_heading = this->path_segments[this->path_index]->getTangHeading(this->current_pose);
+    this->pathref_msg.tangent_heading = this->path_segments[this->path_index]->getTangHeading(this->pose_ned);
 
     this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now();
 
@@ -185,6 +174,11 @@ void PathManagementNode::ref_publish(){
     Necessary Logic
 -----------------------------------*/
 
+/**
+ * @brief Correct the home position
+ * 
+ * @return success of the operation (bool) 
+ */
 bool PathManagementNode::correct_home_position(){
     if(!this->lat){
         std::cout<<"no state available..."<<std::endl;
@@ -201,8 +195,8 @@ bool PathManagementNode::correct_home_position(){
     std::cout<<"Longitude difference: "<< lon_dif<<std::endl;
 
 
-    this->x_correction = R_earth * lat_dif+this->x;
-    this->y_correction = R_earth * lon_dif*cos(this->home_lat*M_PI/180)+this->y;
+    this->x_correction = R_earth * lat_dif+pose_ned(0);
+    this->y_correction = R_earth * lon_dif*cos(this->home_lat*M_PI/180)+pose_ned(1);
 
     std::cout<<"x_correction difference: "<< this->x_correction<<std::endl;
     std::cout<<"y_correction difference: "<< this->y_correction<<std::endl;
@@ -215,15 +209,37 @@ bool PathManagementNode::correct_home_position(){
     Subscription Callbacks
 -----------------------------------*/
 
-void PathManagementNode::state_subscription_callback(const glassy_interfaces::msg::State::SharedPtr msg){
-    this->current_pose(0) = msg->north;
-    this->current_pose(1) = msg->east;
+/**
+ * @brief Callback for the state subscription
+ * 
+ * @param msg 
+ */
+void PathManagementNode::state_subscription_callback(const glassy_msgs::msg::State::SharedPtr msg){
+    // ned position
+    this->pose_ned(0) = msg->p_ned[0];
+    this->pose_ned(1) = msg->p_ned[1];
 
-    this->lat = msg->latitude;
-    this->lon = msg->longitude;
-    this->y = msg->east;
-    this->x = msg->north;
+    // get latitude and longitude
+    this->lat = msg->lat;
+    this->lon = msg->lon;
+}
 
+/**
+ * @brief Callback for the mission info
+ * 
+ * @param msg 
+ */
+void PathManagementNode::mission_info_subscription_callback(const glassy_msgs::msg::MissionInfo::SharedPtr msg){
+    if(this->is_active){
+        if(this->mission_type != msg->mission_mode){
+            this->deactivate();
+        }
+    } else{
+        if(std::find(MissionTypesPathManager.begin(), MissionTypesPathManager.end(), msg->mission_mode) != MissionTypesPathManager.end()){
+            this->activate();
+        }
+    }
+    this->mission_type = msg->mission_mode;
 }
 
 
@@ -231,43 +247,40 @@ void PathManagementNode::state_subscription_callback(const glassy_interfaces::ms
     Service Callbacks
 -----------------------------------*/
 
-void PathManagementNode::activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response){
-    (void) response;
-    // create a request (to activate or deactuvat«)
-    auto request_pf = std::make_shared<std_srvs::srv::SetBool::Request>();
-    if(request->data){
-        // if(!this->correct_home_position()){
-        if(false){
-            std::cout<< "UNABLE TO SET HOME POSITION"<<std::endl;
-            request_pf->data=false;
-            this->deactivate();
-        } else{
-            this->activate();
-            request_pf->data=true;
-            std::cout<< "PATH PLANNING STARTED SUCCESSFULLY"<<std::endl;
-        }
-    } else{
-        this->deactivate();
-        request_pf->data=false;
-        std::cout<< "PATH PLANNING STOPPED SUCCESSFULLY"<<std::endl;
-    }
-    this->activate_deactivate_pathfollowing_client->async_send_request(request_pf);
-}
-
-
-void PathManagementNode::set_path_srv_callback(const std::shared_ptr<glassy_interfaces::srv::SetPath::Request> request, std::shared_ptr<glassy_interfaces::srv::SetPath::Response> response){
+/**
+ * @brief set the path given a file name
+ * 
+ * @param request 
+ * @param response 
+ */
+void PathManagementNode::set_path_srv_callback(const std::shared_ptr<glassy_msgs::srv::SetPath::Request> request, std::shared_ptr<glassy_msgs::srv::SetPath::Response> response){
     (void) response;
     this->setPath(this->path_file_directory + request->path_file);
 }
 
 
 
+/*-------------------------------------------
+    Activate and deactivate the path planning
+--------------------------------------------*/
+
+/**
+ * @brief Activate the path planning
+ */
 void PathManagementNode::activate(){
     this->is_active=true;
+    this->timer->reset();
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Manager Activated");
 }
+
+/**
+ * @brief Deactivate the path planning
+ */
 void PathManagementNode::deactivate(){
     this->is_active=false;
     this->loop=false;
+    this->timer->cancel();
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Manager Deactivated");
 }
 
 
@@ -279,9 +292,14 @@ void PathManagementNode::deactivate(){
 -----------------------------------*/
 
 
-// for now a simple initialization, parameters may be added in the future
+/**
+ * @brief Initialize the path management node
+ */
 void PathManagementNode::init(){
     std::cout<< " starting this path manager node"<<std::endl;
+
+    // get parameters (rates/ max surge/ max yawrate)
+    // get parameters file locations
 
     
     /* -----------------------------
@@ -289,20 +307,15 @@ void PathManagementNode::init(){
     -------------------------------*/
 
 
-    // subscribe to the joystick topic
-    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_interfaces::msg::State>("state_vehicle", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
+    // subscribe to state topic
+    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("state_vehicle", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
 
     // initialize publisher
-    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_interfaces::msg::PathReferences>("path_refs", 1);
+    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_msgs::msg::PathReferences>("path_refs", 1);
 
     // initialize timer, -> dictates when to publish
     this->timer = this->pathmanagement_node->create_wall_timer(100ms, std::bind(&PathManagementNode::ref_publish, this));
 
     //service setup
-    this->activate_deactivate_pathplanning = this->pathmanagement_node->create_service<std_srvs::srv::SetBool>("activate_deactivate_path_planning", std::bind(&PathManagementNode::activate_deactivate_srv_callback, this, _1, _2));
-    this->set_path_srv = this->pathmanagement_node->create_service<glassy_interfaces::srv::SetPath>("set_path", std::bind(&PathManagementNode::set_path_srv_callback, this, _1, _2));
-    
-    // client setup 
-    this->activate_deactivate_pathfollowing_client = this->pathmanagement_node->create_client<std_srvs::srv::SetBool>("activate_deactivate_path_following");
-
+    this->set_path_srv = this->pathmanagement_node->create_service<glassy_msgs::srv::SetPath>("set_path", std::bind(&PathManagementNode::set_path_srv_callback, this, _1, _2));
 }

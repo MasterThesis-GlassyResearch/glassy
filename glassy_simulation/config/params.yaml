@@ -1,4 +1,0 @@
-ros2_communication_node:
-  ros__parameters:
-    subscriptions:
-      state: true
