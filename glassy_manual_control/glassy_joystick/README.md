@@ -1,6 +1,0 @@
-This package serves as the connection the joy node, and the services/functionalities provided by the 
-system. Allows arming/disarming, ...
-
-![image](https://github.com/joaolehodey/glassy/assets/69345264/884d803a-996d-46b0-8fdc-5baae399bf44)
-
-// TODO: Add explanation, diferent Modes, ....
