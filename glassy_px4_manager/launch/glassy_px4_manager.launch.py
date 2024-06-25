@@ -17,7 +17,7 @@ def generate_launch_description():
       Node(
          package='glassy_px4_manager',
          executable='glassy_px4_manager',
-         namespace='glassy',
+         namespace='',
          name='glassy_state_manager',
          parameters=[config]
       )

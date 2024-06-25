@@ -122,7 +122,7 @@ private:
 	/*
 		Parameters
 	*/
-	uint8_t mission_type_ = glassy_msgs::msg::MissionInfo::SUMMER_CHALLENGE;
+	uint8_t mission_type_ = glassy_msgs::msg::MissionInfo::OPEN_LOOP;
 
 	// in nanoseconds
 	long int timeout_actuators_ = 1500000000;

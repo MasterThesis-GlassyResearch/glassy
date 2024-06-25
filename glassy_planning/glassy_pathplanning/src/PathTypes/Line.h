@@ -5,6 +5,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include "PathBase.h"
+#include <glassy_utils/GlassyGeneralUtils.h>
+
 
 class Line: public PathBase
 {

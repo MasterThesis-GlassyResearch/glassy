@@ -22,7 +22,7 @@ StateManager::StateManager() : Node("glassy_state_manager")
     this->declare_parameter("timeouts/actuator_timeout", 1500000000);
     this->declare_parameter("timeouts/mission_timeout", 20000000000);
     this->declare_parameter("thrust_upper_limit", 0.5);
-    this->declare_parameter("thrust_trim", 0.0);
+    this->declare_parameter("thrust_trim", 0.24);
     this->declare_parameter("rudder_trim", 0.0);
     this->declare_parameter("rudder_max_abs_input", 1.0);
     this->declare_parameter("gazebo_simulation", false);
@@ -60,7 +60,7 @@ StateManager::StateManager() : Node("glassy_state_manager")
         
         mission_type_ = mission;
     } else{
-        mission_type_ = MissionInfo::SUMMER_CHALLENGE;
+        mission_type_ = MissionInfo::OPEN_LOOP;
     }
 
 

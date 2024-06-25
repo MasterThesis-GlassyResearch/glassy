@@ -12,12 +12,11 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
-  <depend>rclcpp</depend>
+  <!-- <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
-  <depend>glassy_interfaces</depend>
-  <depend>glassy_main</depend>
-  <depend>glassy_joystick</depend>
-  <depend>joy</depend>
+  <depend>glassy_msgs</depend>
+  <depend>glassy_px4_manager</depend> -->
+
 
   <exec_depend>ros2launch</exec_depend>
 

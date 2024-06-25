@@ -1,4 +1,4 @@
-/glassy/glassy_state_manager:
+/**:
   ros__parameters:
     mission_type: 2
     rates/state_publishing: 50

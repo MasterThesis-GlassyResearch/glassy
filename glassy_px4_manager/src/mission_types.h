@@ -14,14 +14,14 @@ const std::vector<uint8_t> MissionTypes = {
     MissionInfo::MISSION_OFF, 
     MissionInfo::PATH_FOLLOWING,
     MissionInfo::TRAJECTORY_TRACKING,
-    MissionInfo::SUMMER_CHALLENGE
+    MissionInfo::OPEN_LOOP
 };
 
 const std::vector<std::string> MissionNames = {
     "MISSION_OFF",
     "PATH_FOLLOWING",
     "TRAJECTORY_TRACKING",
-    "SUMMER_CHALLENGE"
+    "OPEN_LOOP"
 };
 
 #endif

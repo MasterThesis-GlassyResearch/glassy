@@ -290,7 +290,7 @@ void PIDControlNode::init(){
     auto test =  parameters_client->list_parameters({}, 10);
 
     for(auto name: test.names){
-        std::cout<<'PARAM: ' << name << '  VALUE: '<< this->pid_glassy_node->get_parameter(name).<<std::endl;
+        std::cout<<'PARAM: ' << name << '  VALUE: '<< this->pid_glassy_node->get_parameter(name)<<std::endl;
     }
 
     /* -----------------------------

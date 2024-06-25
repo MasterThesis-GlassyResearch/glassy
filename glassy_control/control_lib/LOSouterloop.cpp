@@ -42,6 +42,6 @@ std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::
 
 
 void LOSouterloop::change_look_ahead_dist(float param){
-    // has a minimal value
+    // has a minimum value
     this->look_ahead_dist = std::max(0.0001f, param);
 }

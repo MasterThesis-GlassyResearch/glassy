@@ -9,6 +9,7 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
 
+    subprocess.run('MicroXRCEAgent udp4 -p 8888', shell = True, executable="/bin/bash")
    
     # start main node
    glassy_main = IncludeLaunchDescription(
@@ -22,8 +23,8 @@ def generate_launch_description():
 
    glassy_inner = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
-         get_package_share_directory('glassy_innerloop'), 'launch'),
-         '/glassy_innerloop_full.launch.py'])
+         get_package_share_directory('glassy_openloop'), 'launch'),
+         '/glassy_openloop.launch.py'])
       )
 
    return LaunchDescription([

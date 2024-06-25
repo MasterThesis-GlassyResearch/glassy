@@ -4,6 +4,8 @@
 #include "eigen3/Eigen/Core"
 #include <iostream>
 #include <stdlib.h>
+#include <glassy_utils/GlassyGeneralUtils.h>
+
 
 class PathBase
 {
@@ -20,21 +22,6 @@ private:
     float PathBase_heading;
 
 public:
-
-    double wrapToPi(double x){
-        x = fmod(x + M_PI,2*M_PI);
-        if (x < 0)
-            x += 2*M_PI;
-        return x - M_PI;
-    }
-
-    double wrapToTwoPi(double x){
-        x = fmod(x ,2*M_PI);
-        if (x < 0)
-            x += 2*M_PI;
-        return x;
-    }
-
     bool is_active=false;
     
     void activate(){

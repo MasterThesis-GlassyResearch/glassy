@@ -18,6 +18,21 @@ double rad2deg(T radians)
     return double(radians) * 180.0 / M_PI;
 }
 
+double wrapToPi(double x){
+        x = fmod(x + M_PI,2*M_PI);
+        if (x < 0)
+            x += 2*M_PI;
+        return x - M_PI;
+    }
+
+
+double wrapToTwoPi(double x){
+    x = fmod(x ,2*M_PI);
+    if (x < 0)
+        x += 2*M_PI;
+    return x;
+}
+
 
 // Quaternion conversions
 Eigen::Vector3d quat_to_euler_ZYX(Eigen::Quaterniond q){

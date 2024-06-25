@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+    glassy_openloop_control:
+      actuators:
+        thrust: 0.1
+        rudder: 0.3
+      type:
+        rudder_sinusoidal_wave: true
+
+      
