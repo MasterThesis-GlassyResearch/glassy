@@ -1,5 +1,5 @@
 #include "Arc.h"
-#include "glassy_utils/GlassyGeneralUtils.h"
+#include <glassy_utils/GlassyGeneralUtils.h>
 
 Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ):
  initial_point(start_point), final_point(final_point), center(center_circ)
@@ -50,7 +50,7 @@ Eigen::Vector2d Arc::getPoint(float gamma){
 
 
     gamma= std::min(std::max(0.f, gamma), 1.f);
-    float angle = wrapToPi(this->ini_angle+gamma*(this->angle_scale));
+    float angle = wrapToPi((this->ini_angle+gamma*(this->angle_scale)));
 
     Eigen::Vector2d angular_contrib(cos(angle), sin(angle));
 
@@ -74,7 +74,7 @@ Eigen::Vector2d Arc::getClosestPoint(Eigen::Vector2d point){
     float angle = atan2(point(1)-this->center(1),point(0)- this->center(0));
 
 
-    float angle_diff = wrapToTwoPi(wrapToPi(angle)-wrapToPi(this->ini_angle));
+    float angle_diff = wrapToTwoPi((wrapToPi(angle)-wrapToPi(this->ini_angle)));
 
     if(this->angle_scale<0){
         angle_diff-=2*M_PI;

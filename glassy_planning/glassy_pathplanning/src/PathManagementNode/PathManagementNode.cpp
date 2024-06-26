@@ -308,14 +308,17 @@ void PathManagementNode::init(){
 
 
     // subscribe to state topic
-    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("state_vehicle", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
+    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
+
+    //subscribe to the mission info
+    this->mission_info_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::MissionInfo>("/glassy/mission_status", 1, std::bind(&PathManagementNode::mission_info_subscription_callback, this, _1));
 
     // initialize publisher
-    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_msgs::msg::PathReferences>("path_refs", 1);
+    this->path_publisher = this->pathmanagement_node->create_publisher<glassy_msgs::msg::PathReferences>("/glassy/path_refs", 1);
 
     // initialize timer, -> dictates when to publish
     this->timer = this->pathmanagement_node->create_wall_timer(100ms, std::bind(&PathManagementNode::ref_publish, this));
 
     //service setup
-    this->set_path_srv = this->pathmanagement_node->create_service<glassy_msgs::srv::SetPath>("set_path", std::bind(&PathManagementNode::set_path_srv_callback, this, _1, _2));
+    this->set_path_srv = this->pathmanagement_node->create_service<glassy_msgs::srv::SetPath>("/glassy/set_path", std::bind(&PathManagementNode::set_path_srv_callback, this, _1, _2));
 }

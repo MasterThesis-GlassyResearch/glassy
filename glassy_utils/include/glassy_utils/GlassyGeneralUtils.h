@@ -18,6 +18,12 @@ T deg2rad(T degrees);
 template <typename T>
 T rad2deg(T radians);
 
+
+float wrapToPi(float x);
+
+
+float wrapToTwoPi(float x);
+
 Eigen::Vector3d quat_to_euler_ZYX(Eigen::Quaterniond q);
 
 #endif

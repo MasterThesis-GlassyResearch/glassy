@@ -23,6 +23,7 @@ find_package(rclcpp REQUIRED)
 find_package(glassy_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package (Eigen3 REQUIRED)
+find_package(glassy_utils REQUIRED)
 
 
 
@@ -33,7 +34,7 @@ add_executable(glassy_innerloop src/glassy_innerloop_main.cpp ${SOURCE_FILES} )
 target_compile_features(glassy_innerloop PRIVATE cxx_std_20)
 target_include_directories(glassy_innerloop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/PID_ctrl_node ${CMAKE_CURRENT_SOURCE_DIR}/../control_lib ${EIGEN3_INCLUDE_DIR})
 
-ament_target_dependencies(glassy_innerloop rclcpp sensor_msgs glassy_msgs std_srvs)
+ament_target_dependencies(glassy_innerloop rclcpp sensor_msgs glassy_msgs std_srvs glassy_utils)
 
 install(TARGETS glassy_innerloop
   DESTINATION lib/${PROJECT_NAME})
@@ -57,7 +58,7 @@ install(DIRECTORY
 
 install(DIRECTORY
   config
-  DESTINATION share/${PROJECT_NAME}
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 ament_package()

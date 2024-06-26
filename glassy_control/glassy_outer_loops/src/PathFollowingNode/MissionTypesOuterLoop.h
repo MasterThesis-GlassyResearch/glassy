@@ -2,26 +2,18 @@
 Developers: João Lehodey - joao.lehodey@tecnico.ulisboa.pt - DSOR/ISR team (Instituto Superior Tecnico) 
 */
 
-#ifndef _MissionTypes_
-#define _MissionTypes_
+#ifndef _MissionTypesOuterLoop_
+#define _MissionTypesOuterLoop_
 
 #include <glassy_msgs/msg/mission_info.hpp>
 #include <vector>
 #include <string>
 using namespace glassy_msgs::msg;
 
-const std::vector<uint8_t> MissionTypes = {
-    MissionInfo::MISSION_OFF, 
+const std::vector<uint8_t> MissionTypesOuterLoop = {
     MissionInfo::PATH_FOLLOWING,
-    MissionInfo::OPEN_LOOP,
     MissionInfo::TRAJECTORY_TRACKING
 };
 
-const std::vector<std::string> MissionNames = {
-    "MISSION_OFF",
-    "PATH_FOLLOWING",
-    "OPEN_LOOP",
-    "TRAJECTORY_TRACKING"
-};
 
 #endif

@@ -55,41 +55,49 @@ void PIDControlNode::direct_actuator_publish(){
     /* --------------------------
         ADD THE 'CANCELLING PART'
     ----------------------------*/
+    float surge_force;
+    float yaw_force;
+    if(this->cancel_dynamics){
+        // calculate surge canceling part:
+        float cancel_surge = this->surgeParams[0]*this->sway*this->yawRate + this->surgeParams[1]*this->surge + this->surgeParams[2]*this->surge*this->surge+ abs(this->yawRate)*this->surgeParams[7]*this->surge + abs(this->yawRate)*this->surgeParams[8]*this->surge*this->surge;
+        float cancel_yaw = this->yawRateParams[0]*this->sway*this->surge + this->yawRateParams[1]*this->yawRate + this->yawRateParams[2]*this->yawRate*abs(this->yawRate) + this->surge*this->yawRate*this->yawRateParams[5] + this->surge*this->surge*this->yawRateParams[6];
 
-    // calculate surge canceling part:
-    float cancel_surge = this->surgeParams[0]*this->sway*this->yawRate + this->surgeParams[1]*this->surge + this->surgeParams[2]*this->surge*this->surge+ abs(this->yawRate)*this->surgeParams[7]*this->surge + abs(this->yawRate)*this->surgeParams[8]*this->surge*this->surge;
-    float cancel_yaw = this->yawRateParams[0]*this->sway*this->surge + this->yawRateParams[1]*this->yawRate + this->yawRateParams[2]*this->yawRate*abs(this->yawRate) + this->surge*this->yawRate*this->yawRateParams[5] + this->surge*this->surge*this->yawRateParams[6];
+        
 
-    float surge_force = pidValSurge - cancel_surge;
-    float yaw_force = pidValYaw - cancel_yaw;
+        surge_force = pidValSurge - cancel_surge;
+        yaw_force = pidValYaw - cancel_yaw;
+    } 
+    else{
+        surge_force = pidValSurge;
+        yaw_force = pidValYaw;
+    }
 
 
-    float Eff = this->surgeParams[3]*(1-exp(-(this->surgeParams[4]* this->surge*this->surge + this->surgeParams[5])/(abs(this->yawRate)+this->epsilon_cnst)));
+
+    // float Eff = this->surgeParams[3]*(1-exp(-(this->surgeParams[4]* this->surge*this->surge + this->surgeParams[5])/(abs(this->yawRate)+this->epsilon_cnst)));
+    float Eff = this->surgeParams[3];
 
     if(std::isnan(Eff)){
         Eff = this->surgeParams[3];
     }
 
-    float thrust_val = (surge_force/Eff)/700 + this->surgeParams[6]/1000;
+    float thrust_val = (surge_force/Eff);
 
-    float thrust_usefull_pwm = surge_force/Eff+this->surgeParams[6];
-
-
-    float sin_rudder_angle_degrees;
+    float sin_rudder_angle;
     if(this->surge>10e-10){
-        sin_rudder_angle_degrees = yaw_force/(this->yawRateParams[3]*this->surge*this->surge + this->yawRateParams[4]*thrust_usefull_pwm);
-        // std::cout<< "Sin rudder degrees" <<sin_rudder_angle_degrees <<std::endl;
+        sin_rudder_angle = yaw_force/(this->yawRateParams[3]*this->surge*this->surge + this->yawRateParams[4]*thrust_val);
+        // std::cout<< "Sin rudder degrees" <<sin_rudder_angle <<std::endl;
     } else{
-        sin_rudder_angle_degrees = 0.0;
+        sin_rudder_angle = 0.0;
     }
 
-    sin_rudder_angle_degrees = std::min(std::max(sin_rudder_angle_degrees,-1.f), 1.f);
+    sin_rudder_angle = std::min(std::max(sin_rudder_angle,-1.f), 1.f);
 
 
-    float rudder_pwm = (asin(sin_rudder_angle_degrees)*180/M_PI -( this->angle_params[1]))/this->angle_params[0];
+    float rudder_angle_degrees = asin(sin_rudder_angle)*180/M_PI;
 
 
-    float rudder_val = (rudder_pwm)/600;
+    float rudder_val = (rudder_angle_degrees)/angle_factor_deg;
 
     /* --------------------------
         Publish to the actuators
@@ -273,25 +281,25 @@ void PIDControlNode::init(){
     -------------------------------*/
 
     // Declare all of the parameters 
-    this->pid_glassy_node->declare_parameter("rates.inner_loop", 20);
-    this->pid_glassy_node->declare_parameter("pid_gains.surge", std::vector<float>({1.0, 0.1, 0.0}));
-    this->pid_glassy_node->declare_parameter("pid_gains.yaw", std::vector<float>({1.0, 0.1, 0.0}));
-    this->pid_glassy_node->declare_parameter("pid_gains.yaw_rate", std::vector<float>({1.0, 0.1, 0.0}));
+    this->pid_glassy_node->declare_parameter("rates.inner_loop", 20.0);
+    this->pid_glassy_node->declare_parameter("pid_gains.surge", std::vector<double>({1.0, 0.1, 0.0}));
+    this->pid_glassy_node->declare_parameter("pid_gains.yaw", std::vector<double>({1.0, 0.1, 0.0}));
+    this->pid_glassy_node->declare_parameter("pid_gains.yaw_rate", std::vector<double>({1.0, 0.1, 0.0}));
 
     // Initialize all the parameters
+    this->update_rate = this->pid_glassy_node->get_parameter("rates.inner_loop").as_double();
+    std::vector<double> gains_surge = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
+    std::vector<double> gains_yaw = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
+    std::vector<double> gains_yaw_rate = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
 
 
 
     const auto node_graph_interface = this->pid_glassy_node->get_node_graph_interface();
 
-
-    // this->pid_glassy_node->get_parameters(p_names, 10);
-    auto parameters_client = std::make_shared<rclcpp::SyncParametersClient>(this->pid_glassy_node);
-    auto test =  parameters_client->list_parameters({}, 10);
-
-    for(auto name: test.names){
-        std::cout<<'PARAM: ' << name << '  VALUE: '<< this->pid_glassy_node->get_parameter(name)<<std::endl;
-    }
+    RCLCPP_INFO(this->pid_glassy_node->get_logger(), "surge gains: %.2f, %.2f, %.2f", gains_surge[0], gains_surge[1], gains_surge[2]);
+    RCLCPP_INFO(this->pid_glassy_node->get_logger(), "yaw gains: %.2f, %.2f, %.2f", gains_yaw[0], gains_yaw[1], gains_yaw[2]);
+    RCLCPP_INFO(this->pid_glassy_node->get_logger(), "yaw_rate gains: %.2f, %.2f, %.2f", gains_yaw_rate[0], gains_yaw_rate[1], gains_yaw_rate[2]);
+    RCLCPP_INFO(this->pid_glassy_node->get_logger(), "update rate: %f", this->update_rate);
 
     /* -----------------------------
         Variable Initialization
@@ -299,8 +307,8 @@ void PIDControlNode::init(){
 
     // this->thrust_gain = this->pid_glassy_node->get_parameter("thrust_gain").as_double();
 
-    this->surgePIDCtrl.set_gains(1.f,0.1f,0);
-    this->yawPIDCtrl.set_gains(2.f,0.01f, 1.f);
+    this->surgePIDCtrl.set_gains(gains_surge[0], gains_surge[1], gains_surge[2]);
+    this->yawPIDCtrl.set_gains(gains_yaw[0], gains_yaw[1], gains_yaw[2]);
 
 
 
@@ -311,15 +319,18 @@ void PIDControlNode::init(){
 
 
     // subscribe to the reference topic
-    this->ref_subscription = this->pid_glassy_node->create_subscription<glassy_msgs::msg::InnerLoopReferences>("inner_loop_ref", 1, std::bind(&PIDControlNode::referrence_subscription_callback, this, _1));
+    this->ref_subscription = this->pid_glassy_node->create_subscription<glassy_msgs::msg::InnerLoopReferences>("/glassy/innerloop_refs", 1, std::bind(&PIDControlNode::referrence_subscription_callback, this, _1));
 
     // subscribe to the joystick topic
-    this->state_subscription = this->pid_glassy_node->create_subscription<glassy_msgs::msg::State>("state_vehicle", 1, std::bind(&PIDControlNode::state_subscription_callback, this, _1));
+    this->state_subscription = this->pid_glassy_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PIDControlNode::state_subscription_callback, this, _1));
+
+    //subscribe to the mission info
+    this->mission_info_subscription = this->pid_glassy_node->create_subscription<glassy_msgs::msg::MissionInfo>("/glassy/mission_status", 1, std::bind(&PIDControlNode::mission_info_subscription_callback, this, _1));
 
     // initialize publisher
-    this->actuator_publisher = this->pid_glassy_node->create_publisher<glassy_msgs::msg::Actuators>("offboard_direct_signals", 1);
+    this->actuator_publisher = this->pid_glassy_node->create_publisher<glassy_msgs::msg::Actuators>("/glassy/actuators", 1);
 
-    this->timer = this->pid_glassy_node->create_wall_timer(50ms, std::bind(&PIDControlNode::direct_actuator_publish, this));
+    this->timer = this->pid_glassy_node->create_wall_timer(1.0s/this->update_rate, std::bind(&PIDControlNode::direct_actuator_publish, this));
 
     /*------------------------------
                  SERVICES

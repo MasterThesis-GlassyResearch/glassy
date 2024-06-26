@@ -33,7 +33,7 @@ add_executable(glassy_outerloop src/glassy_outerloop_main.cpp ${SOURCE_FILES} )
 target_compile_features(glassy_outerloop PRIVATE cxx_std_20)
 target_include_directories(glassy_outerloop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PathFollowingNode ${CMAKE_CURRENT_SOURCE_DIR}/../control_lib ${EIGEN3_INCLUDE_DIR})
 
-ament_target_dependencies(glassy_outerloop rclcpp sensor_msgs glassy_interfaces std_srvs)
+ament_target_dependencies(glassy_outerloop rclcpp sensor_msgs glassy_msgs std_srvs)
 
 install(TARGETS glassy_outerloop
   DESTINATION lib/${PROJECT_NAME})

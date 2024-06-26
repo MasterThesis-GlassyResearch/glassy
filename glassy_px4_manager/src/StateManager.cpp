@@ -16,31 +16,40 @@ StateManager::StateManager() : Node("glassy_state_manager")
 
     // Initialize the parameters
     this->declare_parameter("mission_type", 2);
-    this->declare_parameter("rates/state_publishing", 50);
-    this->declare_parameter("rates/actuator_publishing", 40);
-    this->declare_parameter("rates/mission_info_publishing", 2);
-    this->declare_parameter("timeouts/actuator_timeout", 1500000000);
-    this->declare_parameter("timeouts/mission_timeout", 20000000000);
-    this->declare_parameter("thrust_upper_limit", 0.5);
-    this->declare_parameter("thrust_trim", 0.24);
-    this->declare_parameter("rudder_trim", 0.0);
-    this->declare_parameter("rudder_max_abs_input", 1.0);
+    this->declare_parameter("rates.state_publishing", 50);
+    this->declare_parameter("rates.actuator_publishing", 40);
+    this->declare_parameter("rates.mission_info_publishing", 2);
+    this->declare_parameter("timeouts.actuator_timeout", 1500000000);
+    this->declare_parameter("timeouts.mission_timeout", 20000000000);
+    this->declare_parameter("max_input.thrust", 0.5);
+    this->declare_parameter("trims.thrust", 0.24);
+    this->declare_parameter("trims.rudder", 0.0);
+    this->declare_parameter("max_input.rudder", 1.0);
     this->declare_parameter("gazebo_simulation", false);
 
 
-
     // get parameters
-    int state_publishing_rate = this->get_parameter("rates/state_publishing").as_int();
-    int actuator_publishing_rate = this->get_parameter("rates/actuator_publishing").as_int();
-    int mission_info_publishing_rate = this->get_parameter("rates/mission_info_publishing").as_int();
+    int state_publishing_rate = this->get_parameter("rates.state_publishing").as_int();
+    int actuator_publishing_rate = this->get_parameter("rates.actuator_publishing").as_int();
+    int mission_info_publishing_rate = this->get_parameter("rates.mission_info_publishing").as_int();
     int mission = this->get_parameter("mission_type").as_int();
-    timeout_actuators_ = this->get_parameter("timeouts/actuator_timeout").as_int();
-    mission_timeout_ = this->get_parameter("timeouts/mission_timeout").as_int();
-    thrust_trim_ = this->get_parameter("thrust_trim").as_double();
-    rudder_trim_ = this->get_parameter("rudder_trim").as_double();
-    thrust_upper_limit_ = this->get_parameter("thrust_upper_limit").as_double();
-    rudder_max_abs_input_ = this->get_parameter("rudder_max_abs_input").as_double();
+    timeout_actuators_ = this->get_parameter("timeouts.actuator_timeout").as_int();
+    mission_timeout_ = this->get_parameter("timeouts.mission_timeout").as_int();
+    thrust_trim_ = this->get_parameter("trims.thrust").as_double();
+    rudder_trim_ = this->get_parameter("trims.rudder").as_double();
+    thrust_upper_limit_ = this->get_parameter("max_input.thrust").as_double();
+    rudder_max_abs_input_ = this->get_parameter("max_input.rudder").as_double();
     is_gazebo_simulator_ = this->get_parameter("gazebo_simulation").as_bool();
+
+    // print out important parameters:
+	RCLCPP_INFO(this->get_logger(), "MISSION TYPE: %s", MissionNames[mission].c_str());
+	RCLCPP_INFO(this->get_logger(), "MISSION TIMEOUT: %ld", mission_timeout_);
+	RCLCPP_INFO(this->get_logger(), "THRUST LIMIT: %.2f", thrust_upper_limit_);
+	RCLCPP_INFO(this->get_logger(), "RUDDER MAX: %.2f", rudder_max_abs_input_);
+	RCLCPP_INFO(this->get_logger(), "THRUST TRIM: %.2f", thrust_trim_);
+	RCLCPP_INFO(this->get_logger(), "RUDDER TRIM: %.2f", rudder_trim_);
+	RCLCPP_INFO(this->get_logger(), "SIMULATION: %s", (rudder_trim_? "true" : "false"));
+    
 
 
     // initialize parameter handlers
@@ -89,11 +98,10 @@ StateManager::StateManager() : Node("glassy_state_manager")
 
     //Initialize subscribers
     vehicle_control_mode_ = this->create_subscription<VehicleControlMode>("fmu/out/vehicle_control_mode", qos, std::bind(&StateManager::vehicle_control_mode_callback, this, std::placeholders::_1));
-
     vehicle_odometry_ = this->create_subscription<VehicleOdometry>("fmu/out/vehicle_odometry", qos, std::bind(&StateManager::vehicle_odometry_callback, this, std::placeholders::_1));
+    vehicle_global_pose_subscriber_ = this->create_subscription<VehicleGlobalPosition>("fmu/out/vehicle_global_position", qos, std::bind(&StateManager::GPS_callback, this, std::placeholders::_1));
 
     actuator_glassy_subscriber_ = this->create_subscription<glassy_msgs::msg::Actuators>("/glassy/actuators",1,  std::bind(&StateManager::actuator_glassy_callback, this, std::placeholders::_1));
-
 
 
     // define timers for state publishing and actuator publishing
@@ -179,6 +187,7 @@ void StateManager::actuator_glassy_callback(const glassy_msgs::msg::Actuators::S
 /**
  * @brief Monitor state of vehicle, in case of armed and in offboard, start mission,
  * else stop it.
+ * @param msg Vehicle control mode 
  */
 void StateManager::vehicle_control_mode_callback(const VehicleControlMode::SharedPtr msg)
 {
@@ -196,6 +205,16 @@ void StateManager::vehicle_control_mode_callback(const VehicleControlMode::Share
         this->stop_mission();
     } 
 };
+
+/**
+ * @brief Get the current lattitude and longitude
+ * @param msg px4 msg containing global position info
+ */
+void StateManager::GPS_callback(const VehicleGlobalPosition::SharedPtr msg){
+    state_px4_msg_->altitude = msg->alt;
+    state_px4_msg_->lat = msg->lat;
+    state_px4_msg_->lon = msg->lon;
+}
 
 /**
  * @brief Disarm the vehicle, mostly used when mission is finished or in case of emergency.

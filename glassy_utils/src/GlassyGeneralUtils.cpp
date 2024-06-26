@@ -18,15 +18,14 @@ double rad2deg(T radians)
     return double(radians) * 180.0 / M_PI;
 }
 
-double wrapToPi(double x){
+float wrapToPi(float x){
         x = fmod(x + M_PI,2*M_PI);
         if (x < 0)
             x += 2*M_PI;
         return x - M_PI;
     }
 
-
-double wrapToTwoPi(double x){
+float wrapToTwoPi(float x){
     x = fmod(x ,2*M_PI);
     if (x < 0)
         x += 2*M_PI;

@@ -18,6 +18,7 @@ Developers: João Lehodey - joao.lehodey@tecnico.ulisboa.pt - DSOR/ISR team (Ins
 #include <px4_msgs/msg/actuator_servos.hpp>
 #include <px4_msgs/msg/vehicle_status.hpp>
 #include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/vehicle_global_position.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <stdint.h>
 
@@ -94,6 +95,7 @@ private:
     */
     rclcpp::Subscription<VehicleControlMode>::SharedPtr vehicle_control_mode_;
 	rclcpp::Subscription<VehicleOdometry>::SharedPtr vehicle_odometry_;
+	rclcpp::Subscription<VehicleGlobalPosition>::SharedPtr vehicle_global_pose_subscriber_;
 	rclcpp::Subscription<glassy_msgs::msg::Actuators>::SharedPtr actuator_glassy_subscriber_;
 
 	/*
@@ -102,6 +104,7 @@ private:
     void vehicle_control_mode_callback(const VehicleControlMode::SharedPtr msg);
 	void vehicle_odometry_callback(const VehicleOdometry::SharedPtr msg);
 	void actuator_glassy_callback(const glassy_msgs::msg::Actuators::SharedPtr msg);
+	void GPS_callback(const VehicleGlobalPosition::SharedPtr msg);
 
 
 	std::atomic<uint64_t> timestamp_;   //!< common synced timestamped

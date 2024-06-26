@@ -1,0 +1,10 @@
+/**:
+  ros__parameters:
+    pid_gains:
+      surge: [1.0, 0.0, 0.0]
+      yaw: [1.0, 0.0, 0.0]
+      yaw_rate: [1.0, 0.0, 0.0]
+    rates:
+      inner_loop: 30.0
+
+    

@@ -45,6 +45,10 @@ class GlassyOpenLoop(Node):
     
         self.time_of_last_mission_status_msg_received = None
 
+        self.list_item = 0
+
+        
+
 
 
 

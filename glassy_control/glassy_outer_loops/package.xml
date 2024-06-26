@@ -13,7 +13,7 @@
   <test_depend>ament_lint_common</test_depend>
 
   <depend>rclcpp</depend>
-  <depend>glassy_interfaces</depend>
+  <depend>glassy_msgs</depend>
 
   <exec_depend>ros2launch</exec_depend>
 

@@ -53,10 +53,16 @@ private:
     float sway = 0.0;
 
     // define the parameters of the dynamical model :)
-    float surgeParams[10] = { 1.1965, -0.6218, -0.0216, 0.0164,  0.0976,  0.5056, 335.2551, -0.1154, -0.0025, -0.2088};
-    float yawRateParams[7] = { 2.1225, -0.8592, -0.0963,  2.2910, -0.0055, -1.9001,  0.0123};
+    float surgeParams[10] = { 1.1965, -0.6218, -0.0216, 16.4,  0.0976,  0.5056, 335.2551, -0.1154, -0.0025, -0.2088};
+    float yawRateParams[7] = { 2.1225, -0.8592, -0.0963,  2.2910, -5.5, -1.9001,  0.0123};
     float angle_params[2] = { 0.1000, -0.6986};
+    float angle_factor_deg = 60;
     float epsilon_cnst = 10e-12;
+
+    float update_rate;
+    
+    //check whether or not to cancel the dynamics
+    bool cancel_dynamics = false;
 
 
     // define the mission info
