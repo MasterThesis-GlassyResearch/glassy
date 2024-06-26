@@ -10,7 +10,7 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='glassy_outerloop',
-            namespace='glassy',
+            namespace='',
             executable='glassy_outerloop',
             name='glassy_outerloop',
             output = 'screen'

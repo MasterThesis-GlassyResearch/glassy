@@ -8,8 +8,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
 def generate_launch_description():
-
-    subprocess.run('MicroXRCEAgent udp4 -p 8888', shell = True, executable="/bin/bash")
    
     # start main node
    glassy_main = IncludeLaunchDescription(
@@ -21,7 +19,7 @@ def generate_launch_description():
    
     # start inner loop nodes
 
-   glassy_inner = IncludeLaunchDescription(
+   glassy_openloop = IncludeLaunchDescription(
       PythonLaunchDescriptionSource([os.path.join(
          get_package_share_directory('glassy_openloop'), 'launch'),
          '/glassy_openloop.launch.py'])
@@ -29,5 +27,5 @@ def generate_launch_description():
 
    return LaunchDescription([
       glassy_main,
-      glassy_inner
+      glassy_openloop
    ])
