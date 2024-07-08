@@ -19,6 +19,7 @@ def generate_launch_description():
             executable='glassy_innerloop',
             namespace='',
             name='glassy_innerloop',
-            parameters=[config]
+            parameters=[config],
+            output='screen'
         )
    ])

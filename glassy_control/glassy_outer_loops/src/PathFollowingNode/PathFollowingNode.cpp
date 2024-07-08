@@ -33,6 +33,7 @@ void PathFollowingNode::ref_publish(){
         this->reference_publisher->publish(this->inner_loop_ref_msg);
     }
 
+    
 
     std::vector<float> res_los = this->LOSPathFollowing.computeOutput(this->pose_ref, this->pose,this->tangent_heading, this->speed);
 

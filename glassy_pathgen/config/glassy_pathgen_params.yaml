@@ -1,0 +1,12 @@
+/**:
+  ros__parameters:
+    path_defs:
+      path_type: "dubins"
+      r_min: 2.0
+      online_gen: false
+      rate: 2.0
+
+    folder_targets: "target_examples"
+    circuit: "circuit_1.py"
+
+      

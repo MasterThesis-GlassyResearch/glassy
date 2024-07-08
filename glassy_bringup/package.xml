@@ -12,10 +12,16 @@
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
-  <!-- <depend>rclcpp</depend>
+  <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
   <depend>glassy_msgs</depend>
-  <depend>glassy_px4_manager</depend> -->
+  <depend>glassy_px4_manager</depend>
+  <depend>glassy_innerloop</depend>
+  <depend>glassy_outerloop</depend>
+  <depend>glassy_planning</depend>
+  <!-- <depend>glassy_openloop</depend> -->
+
+
 
 
   <exec_depend>ros2launch</exec_depend>

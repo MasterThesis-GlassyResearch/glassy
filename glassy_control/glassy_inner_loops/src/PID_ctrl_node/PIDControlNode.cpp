@@ -31,7 +31,7 @@ void PIDControlNode::direct_actuator_publish(){
 
 
     // Start by taking care of the surge componnent:
-    float pidValSurge = this->surgePIDCtrl.computePIDOutput(this->surge, this->surge_ref, duration.nanoseconds()/10e9, false);
+    float pidValSurge = this->surgePIDCtrl.computePIDOutput(this->surge, this->surge_ref, duration.nanoseconds()/1e9, false);
 
     // Now take care of YAW or YAWRATE
     float pidValYaw = 0.0;
@@ -44,10 +44,10 @@ void PIDControlNode::direct_actuator_publish(){
             this->yaw -=2*M_PI;
         }
 
-        pidValYaw = this->yawPIDCtrl.computePIDOutput(this->yaw, this->yaw_ref, duration.nanoseconds()/10e9, false);
+        pidValYaw = this->yawPIDCtrl.computePIDOutput(this->yaw, this->yaw_ref, duration.nanoseconds()/1e9, false);
     } 
     else if(this->ctrlType == SURGE_YAWRATE){
-        pidValYaw = this->yawRatePIDCtrl.computePIDOutput(this->yawRate, this->yawRate_ref, duration.nanoseconds()/10e9, false);
+        pidValYaw = this->yawRatePIDCtrl.computePIDOutput(this->yawRate, this->yawRate_ref, duration.nanoseconds()/1e9, false);
     } else{
         pidValYaw = 0.0;
     }
@@ -134,13 +134,20 @@ void PIDControlNode::referrence_subscription_callback(const glassy_msgs::msg::In
  */
 void PIDControlNode::mission_info_subscription_callback(const glassy_msgs::msg::MissionInfo::SharedPtr msg){
     if(this->is_active && this->mission_type != msg->mission_mode){
+        std::cout<<"DE"<<std::endl;
+
         this->deactivate();
         this->mission_type = msg->mission_mode;
     } else{
-        if(std::find(MissionTypesInnerLoop.begin(), MissionTypesInnerLoop.end(), msg->mission_mode) != MissionTypesInnerLoop.end()){
+        // if(!this->is_active && std::find(MissionTypesInnerLoop.begin(), MissionTypesInnerLoop.end(), msg->mission_mode) != MissionTypesInnerLoop.end()){
+        if(!this->is_active && msg->mission_mode == MissionInfo::PATH_FOLLOWING){
+        
+
+            std::cout<<"ACTIVATING"<<std::endl;
             this->activate();
+            this->mission_type = msg->mission_mode;
+
         }
-        this->mission_type = msg->mission_mode;
     }
 }
 
@@ -262,9 +269,9 @@ void PIDControlNode::activate(){
  */
 void PIDControlNode::deactivate(){
     this->is_active=false;
-    this->yawPIDCtrl.full_reset();
-    this->yawRatePIDCtrl.full_reset();
-    this->surgePIDCtrl.full_reset();
+    // this->yawPIDCtrl.full_reset();
+    // this->yawRatePIDCtrl.full_reset();
+    // this->surgePIDCtrl.full_reset();
 }
 
 
@@ -289,8 +296,8 @@ void PIDControlNode::init(){
     // Initialize all the parameters
     this->update_rate = this->pid_glassy_node->get_parameter("rates.inner_loop").as_double();
     std::vector<double> gains_surge = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
-    std::vector<double> gains_yaw = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
-    std::vector<double> gains_yaw_rate = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
+    std::vector<double> gains_yaw = this->pid_glassy_node->get_parameter("pid_gains.yaw").as_double_array();
+    std::vector<double> gains_yaw_rate = this->pid_glassy_node->get_parameter("pid_gains.yaw_rate").as_double_array();
 
 
 

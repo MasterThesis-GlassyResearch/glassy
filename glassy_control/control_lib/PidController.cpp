@@ -138,9 +138,10 @@ float PidController::computePIDOutput(float current_val, float ref_val, float du
     this->Pterm = error*this->p_gain;
 
     // compute integral action
-    if(!std::isnan(this->prev_error)){
-        this->integral = this->clipping(this->integral+duration*error, this->max_integral_val, this->min_integral_val);
-    }
+    // if(!std::isnan(this->prev_error)){
+    // }
+
+    this->integral = this->integral+duration*error;
     this->Iterm = this->integral*this->i_gain;
 
     // compute derivative action

@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
-    mission_type: 2
+    mission_type: 1
     rates:
       state_publishing: 50
       actuator_publishing: 40
@@ -8,21 +8,21 @@
 
     # mission timeout: time for which the mission will be executed
     timeouts:
-      mission_timeout: 30
+      mission_timeout: 1000000000000
     # actuator timeout: time in which the actuator values should be updated
       actuator_timeout: 1500000000
     # state timeout: time in which the state should be updated
       state_timeout: 0.1
 
     trims:
-      thrust: 0.24
+      thrust: 0.0
       rudder: 0.0
 
     max_input:
-      thrust: 0.6
-      rudder: 0.9
+      thrust: 1.0
+      rudder: 1.0
 
-    glassy_simulation: false
+    glassy_simulation: true
 
 
 

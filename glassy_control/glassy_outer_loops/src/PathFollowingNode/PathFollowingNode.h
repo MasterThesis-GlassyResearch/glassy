@@ -20,32 +20,26 @@
 class PathFollowingNode
 {
 private:
-    // service and subscriber callbacks
 
-    // values sent directly to actuators if correct mode is set
-
+    // a controller of each type, the choice of which to use is done later
     LOSouterloop LOSPathFollowing;
 
     Eigen::Vector2d pose;
     Eigen::Vector2d pose_ref;
     float tangent_heading;
+    float curvature;
+    float curvature_deriv;
 
     float surge_ref = 0.0;
 
     bool is_active = false;
 
-    float max_surge = 5;
-    float min_surge = 0;
-
-    float max_yawrate = 1;
-    float min_yawrate = -1;
-
-    float speed = 2;
+    float speed = 1;
 
     void ref_publish();
 
     // define the mission info
-    int mission_type = glassy_msgs::msg::MissionInfo::MISSION_OFF;
+    int mission_type = glassy_msgs::msg::MissionInfo::PATH_FOLLOWING;
 
 public:
     PathFollowingNode(std::shared_ptr<rclcpp::Node> node);
@@ -82,7 +76,7 @@ public:
     // Clients ROS2
     rclcpp::Client<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_innerloop_client;
 
-    // Initialization Logic
+    // Initialization Logic 
     void init();
 
     /*

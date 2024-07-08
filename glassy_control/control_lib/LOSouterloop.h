@@ -26,7 +26,7 @@ public:
     LOSouterloop(/* args */);
     LOSouterloop(float look_ahead_dist);
     ~LOSouterloop(){};
-    std::vector<float> computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,float tangent_heading,float speed);
+    std::vector<float> computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,float tangent_heading,float speed, float duration);
 
     void change_look_ahead_dist(float param);
 

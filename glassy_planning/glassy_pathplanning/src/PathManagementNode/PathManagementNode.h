@@ -44,6 +44,10 @@ private:
    float lat = 0.0;
    float lon = 0.0;
 
+//    float home_lat = 0.0;
+//    float home_lon = 0.0;
+
+    bool is_simulation = true;
    float home_lat = 38.766144;
    float home_lon = -9.093334;
 

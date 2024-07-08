@@ -35,8 +35,9 @@ void PathManagementNode::setPath(std::string file_location){
     this->path_segments.clear();
     this->path_index = 0;
 
-
-    this->correct_home_position();
+    if(!this->is_simulation){
+        this->correct_home_position();
+    }
     std::ifstream myfile(file_location.c_str());
     std::cout<<"my file var created "<<std::endl;
     

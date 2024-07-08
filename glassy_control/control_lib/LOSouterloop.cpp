@@ -12,7 +12,7 @@ LOSouterloop::LOSouterloop(float look_ahead_dist): look_ahead_dist(look_ahead_di
 };
 
 
-std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,float tangent_heading,float speed){
+std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,float tangent_heading,float speed, float duration){
 
     Eigen::Matrix2d rot;
     rot << cos(tangent_heading), sin(tangent_heading),

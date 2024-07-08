@@ -32,6 +32,7 @@ set(msg_files
   "msg/InnerLoopReferences.msg"
   "msg/PathReferences.msg"
   "msg/MissionInfo.msg"
+  "msg/PathInfo.msg"
   )
 
 set(srv_files

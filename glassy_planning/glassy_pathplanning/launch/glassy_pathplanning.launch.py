@@ -12,7 +12,6 @@ def generate_launch_description():
             package='glassy_pathplanning',
             namespace='glassy',
             executable='glassy_pathplanning',
-            name='glassy_pathplanning',
-            output = 'screen'
+            name='glassy_pathplanning'
         ),
     ])
