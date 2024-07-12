@@ -27,7 +27,6 @@ public:
 
     float getTangHeading(Eigen::Vector2d point);
 
-
     ~Line();
 
 

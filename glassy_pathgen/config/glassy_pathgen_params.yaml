@@ -1,12 +1,21 @@
 /**:
   ros__parameters:
-    path_defs:
-      path_type: "dubins"
-      r_min: 2.0
-      online_gen: false
-      rate: 2.0
+    glassy_pathgen:
+      path_defs:
+        path_type: "dubins"
+        r_min: 6.0
+        online_gen: false
+        rate: 2.0
+        loop: true
 
-    folder_targets: "target_examples"
-    circuit: "circuit_1.py"
+      folder_circuits: "target_examples"
+      circuit: "circuit_1.py"
+      waypoints: 
+        [
+        0.0,0.0,  0.0 , 
+        20.0 ,0.0, 3.014159265,
+        40.0, 40.0 ,  0.0 ,
+        0.0 , 40.0,-1.057079633,
+        0.0, 0.0, 0.0
+        ]
 
-      

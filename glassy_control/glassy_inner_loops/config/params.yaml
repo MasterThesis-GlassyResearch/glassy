@@ -2,9 +2,12 @@
   ros__parameters:
     pid_gains:
       surge: [12.0, 10.0, 0.0]
-      yaw: [10.0, 0.001, 0.2]
-      yaw_rate: [1.0, 0.0, 0.0]
+      yaw: [15.0, 0.001, 1.2]
+      yaw_rate: [10.0, 0.0, 0.0]
     rates:
-      inner_loop: 20.0
+      inner_loop: 40.0
+    cancel_dynamics: true
+
+
 
     

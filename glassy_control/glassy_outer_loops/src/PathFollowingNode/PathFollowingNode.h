@@ -5,7 +5,11 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <string>
+#include <stdlib.h>
+
 #include "../control_lib/LOSouterloop.h"
+#include "../control_lib/LOSouterloopYawRate.h"
 
 #include "MissionTypesOuterLoop.h"
 #include "glassy_msgs/msg/inner_loop_references.hpp"
@@ -22,10 +26,13 @@ class PathFollowingNode
 private:
 
     // a controller of each type, the choice of which to use is done later
+    std::string controller_type = "LOS";
     LOSouterloop LOSPathFollowing;
+    LOSouterloopYawRate LOSPathFollowingYawRate;
 
     Eigen::Vector2d pose;
     Eigen::Vector2d pose_ref;
+    float yaw;
     float tangent_heading;
     float curvature;
     float curvature_deriv;
@@ -37,6 +44,8 @@ private:
     float speed = 1;
 
     void ref_publish();
+
+    long long int last_time_publishing_nanosecs = 0;
 
     // define the mission info
     int mission_type = glassy_msgs::msg::MissionInfo::PATH_FOLLOWING;

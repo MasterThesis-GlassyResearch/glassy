@@ -32,6 +32,10 @@ float wrapToTwoPi(float x){
     return x;
 }
 
+float clip_val(float x, float maxv, float minv){
+    return std::min(std::max(x,minv), maxv);
+}
+
 
 // Quaternion conversions
 Eigen::Vector3d quat_to_euler_ZYX(Eigen::Quaterniond q){

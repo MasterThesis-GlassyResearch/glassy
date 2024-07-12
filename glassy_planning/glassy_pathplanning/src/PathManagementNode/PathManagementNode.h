@@ -12,6 +12,7 @@
 #include "glassy_msgs/msg/state.hpp"
 #include "glassy_msgs/srv/set_path.hpp"
 #include "glassy_msgs/msg/mission_info.hpp"
+#include "glassy_msgs/msg/path_info.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "MissionTypesPathManager.h"
@@ -68,10 +69,6 @@ private:
 
    void ref_publish();
 
-    
-    Line test_line1;
-    Arc test_arc1;
-
     std::vector<std::shared_ptr<PathBase>> path_segments;
     std::vector<float> requested_surge;
     int path_index = 0;
@@ -93,6 +90,10 @@ public:
     // subscribe to the mission info
     rclcpp::Subscription<glassy_msgs::msg::MissionInfo>::SharedPtr mission_info_subscription;
     void mission_info_subscription_callback(const glassy_msgs::msg::MissionInfo::SharedPtr msg);
+
+    // subscribe to the path
+    rclcpp::Subscription<glassy_msgs::msg::PathInfo>::SharedPtr path_info_subscription;
+    void path_info_subscription_callback(const glassy_msgs::msg::PathInfo::SharedPtr msg);
 
 
     glassy_msgs::msg::PathReferences pathref_msg;

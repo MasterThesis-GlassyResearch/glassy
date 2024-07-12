@@ -48,7 +48,7 @@ StateManager::StateManager() : Node("glassy_state_manager")
 	RCLCPP_INFO(this->get_logger(), "RUDDER MAX: %.2f", rudder_max_abs_input_);
 	RCLCPP_INFO(this->get_logger(), "THRUST TRIM: %.2f", thrust_trim_);
 	RCLCPP_INFO(this->get_logger(), "RUDDER TRIM: %.2f", rudder_trim_);
-	RCLCPP_INFO(this->get_logger(), "SIMULATION: %s", (rudder_trim_? "true" : "false"));
+	RCLCPP_INFO(this->get_logger(), "SIMULATION: %s", (is_gazebo_simulator_? "true" : "false"));
     
 
 

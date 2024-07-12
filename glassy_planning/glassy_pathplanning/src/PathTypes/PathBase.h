@@ -9,12 +9,13 @@
 
 class PathBase
 {
-private:
+protected:
     /* data */
     Eigen::Vector2d initial_point;
     Eigen::Vector2d final_point;
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
+
 
     virtual Eigen::Vector2d getPoint(float gamma){
         (void) gamma;
@@ -23,6 +24,8 @@ private:
 
 public:
     bool is_active=false;
+    float curvature;
+
     
     void activate(){
         this->is_active = true;
@@ -39,6 +42,7 @@ public:
         (void) point;
         return(0.0);};
 
+    virtual float getCurvature(){return this->curvature;};
 
     ~PathBase(){};
 

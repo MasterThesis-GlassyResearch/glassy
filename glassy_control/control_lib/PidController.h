@@ -45,7 +45,7 @@ public:
     float Iterm;
     float Dterm;
     float output;
-    float integral;
+    float integral = 0.0;
     float error;
     float prev_error= NAN;
 

@@ -19,6 +19,7 @@ private:
     Eigen::Vector2d center;
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
+
     float radius = 0.0;
 
 
@@ -46,14 +47,21 @@ private:
     float PathBase_heading;
 
 public:
-    Arc(/* args */){};
-    Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ);
+    // Arc(/* args */){};
+    // Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ);
     Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_scale);
     Eigen::Vector2d getClosestPoint(Eigen::Vector2d point);
 
     float getTangHeading(Eigen::Vector2d point);
-
-
+    float getCurvature(){ 
+        float sign;   
+    if(this->angle_scale>0){
+        sign = 1;
+    } else{
+        sign = -1;
+    }
+    float curv = sign/this->radius;
+    return curv;};
     ~Arc(){};
 
 };

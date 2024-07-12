@@ -41,7 +41,7 @@ Eigen::Vector2d Line::getClosestPoint(Eigen::Vector2d point){
         return this->initial_point;
     }
 
-    if(gamma_closest>1){
+    if(gamma_closest>=1){
         this->deactivate();
         gamma_closest=1.0;
     }

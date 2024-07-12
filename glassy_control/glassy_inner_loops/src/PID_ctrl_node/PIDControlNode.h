@@ -44,7 +44,7 @@ private:
     float yawRate_ref = 0;
 
     // define control type (either surge-yaw or surge-yawrate)
-    controlType ctrlType = SURGE_YAW;
+    int ctrlType = glassy_msgs::msg::InnerLoopReferences::SURGE_YAW;
 
     // define the current state
     float surge = 0.0;
@@ -62,7 +62,7 @@ private:
     float update_rate;
     
     //check whether or not to cancel the dynamics
-    bool cancel_dynamics = false;
+    bool cancel_dynamics = true;
 
 
     // define the mission info

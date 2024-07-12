@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import glassy_msgs.msg as glassy_msgs
+from glassy_msgs.msg import PathInfo
 
 
 
@@ -69,6 +69,8 @@ class DubinsGenerator():
 
         self.p_fin = waypoints[-1][:2]
         self.heading_fin = waypoints[-1][2]
+        self.full_path_info.clear()
+        self.full_path_type.clear()
         for i in range(0, num_waypoints-1):
             self.waypointsDef(waypoints[i], waypoints[i+1])
             self.total_length = self.total_length+self.DubinPathFinder()  
@@ -215,44 +217,45 @@ class DubinsGenerator():
         angle_c3 = self.wrapTo2Pi(self.wrapTo2Pi(center_line_angle +beta +np.pi/2)-self.yaw2)
         return self.r_min*(angle_c1+angle_c2+angle_c3)
     
+    
     #-----------------------------------
     #------- PATH creation and append
     #-----------------------------------
 
     def RSR_path(self):
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_r)
         line_ang = self.wrapTo2Pi(np.arctan2(self.c2_r[1]-self.c1_r[1], self.c2_r[0]-self.c1_r[0]))
 
-        self.full_path_info.append(-self.wrapTo2Pi(self.yaw1-line_ang))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(self.yaw1-line_ang)]))
 
-        self.full_path_type.append('s')
+        self.full_path_type.append(PathInfo.STRAIGHT)
         self.full_path_info.append(self.c1_r + self.r_min* np.array([np.cos(line_ang+np.pi/2), np.sin(line_ang+np.pi/2)]))
         self.full_path_info.append(self.c2_r + self.r_min* np.array([np.cos(line_ang+np.pi/2), np.sin(line_ang+np.pi/2)]))
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.c2_r + self.r_min* np.array([np.cos(line_ang+np.pi/2), np.sin(line_ang+np.pi/2)]))
         self.full_path_info.append(self.c2_r)
-        self.full_path_info.append(-self.wrapTo2Pi(line_ang-self.yaw2))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(line_ang-self.yaw2)]))
 
 
     def LSL_path(self):
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_l)
         line_ang = self.wrapTo2Pi(np.arctan2(self.c2_l[1]-self.c1_l[1], self.c2_l[0]-self.c1_l[0]))
 
-        self.full_path_info.append(self.wrapTo2Pi(line_ang-self.yaw1))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(line_ang-self.yaw1)]))
 
-        self.full_path_type.append('s')
+        self.full_path_type.append(PathInfo.STRAIGHT)
         self.full_path_info.append(self.c1_l + self.r_min* np.array([np.cos(line_ang-np.pi/2), np.sin(line_ang-np.pi/2)]))
         self.full_path_info.append(self.c2_l + self.r_min* np.array([np.cos(line_ang-np.pi/2), np.sin(line_ang-np.pi/2)]))
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.c2_l + self.r_min* np.array([np.cos(line_ang-np.pi/2), np.sin(line_ang-np.pi/2)]))
         self.full_path_info.append(self.c2_l)
-        self.full_path_info.append(self.wrapTo2Pi(self.yaw2-line_ang))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(self.yaw2-line_ang)]))
 
 
     def LSR_path(self):
@@ -263,20 +266,20 @@ class DubinsGenerator():
         alpha = self.wrapTo2Pi(np.arccos(2*self.r_min/center_circle_dist))
         escape_angle = self.wrapTo2Pi(center_line_angle+ np.pi/2 - alpha)
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_l)
 
-        self.full_path_info.append(self.wrapTo2Pi(escape_angle-self.yaw1))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(escape_angle-self.yaw1)]))
 
-        self.full_path_type.append('s')
+        self.full_path_type.append(PathInfo.STRAIGHT)
         self.full_path_info.append(self.c1_l + self.r_min* np.array([np.cos(escape_angle-np.pi/2), np.sin(escape_angle-np.pi/2)]))
         self.full_path_info.append(self.c2_r + self.r_min* np.array([np.cos(escape_angle+np.pi/2), np.sin(escape_angle+np.pi/2)]))
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.c2_r + self.r_min* np.array([np.cos(escape_angle+np.pi/2), np.sin(escape_angle+np.pi/2)]))
         self.full_path_info.append(self.c2_r)
-        self.full_path_info.append(-self.wrapTo2Pi(escape_angle-self.yaw2))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(escape_angle-self.yaw2)]))
 
     def RSL_path(self):
 
@@ -285,20 +288,20 @@ class DubinsGenerator():
         alpha = np.arccos(2*self.r_min/center_circle_dist)
         escape_angle = self.wrapTo2Pi(center_line_angle- np.pi/2 + alpha)
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_r)
 
-        self.full_path_info.append(-self.wrapTo2Pi(self.yaw1-escape_angle))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(self.yaw1-escape_angle)]))
 
-        self.full_path_type.append('s')
+        self.full_path_type.append(PathInfo.STRAIGHT)
         self.full_path_info.append(self.c1_r + self.r_min* np.array([np.cos(escape_angle+np.pi/2), np.sin(escape_angle+np.pi/2)]))
         self.full_path_info.append(self.c2_l + self.r_min* np.array([np.cos(escape_angle-np.pi/2), np.sin(escape_angle-np.pi/2)]))
 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.c2_l + self.r_min* np.array([np.cos(escape_angle-np.pi/2), np.sin(escape_angle-np.pi/2)]))
         self.full_path_info.append(self.c2_l)
-        self.full_path_info.append(self.wrapTo2Pi(self.yaw2-escape_angle))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(self.yaw2-escape_angle)]))
 
 
 
@@ -313,25 +316,25 @@ class DubinsGenerator():
         escape_angle = self.wrapTo2Pi(center_line_angle-beta-np.pi/2)
 
         #first arc
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_r)
-        self.full_path_info.append(-self.wrapTo2Pi(self.yaw1-escape_angle))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(self.yaw1-escape_angle)]))
 
         # second arc 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         center3 = self.c1_r+2*self.r_min*np.array([np.cos(center_line_angle-beta), np.sin(center_line_angle-beta)])
         tang1 = self.c1_r+self.r_min*np.array([np.cos(center_line_angle-beta), np.sin(center_line_angle-beta)])
         self.full_path_info.append(tang1)
         self.full_path_info.append(center3)
-        self.full_path_info.append(2*np.pi- 2*alpha)
+        self.full_path_info.append(np.array([2*np.pi- 2*alpha]))
 
         #third arc
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         entrance_angle = center_line_angle-beta+2*np.pi-2*alpha
         self.full_path_info.append(self.c2_r + self.r_min* np.array([np.cos(entrance_angle), np.sin(entrance_angle)]))
         self.full_path_info.append(self.c2_r)
-        self.full_path_info.append(-self.wrapTo2Pi(self.wrapTo2Pi(-np.pi/2+entrance_angle)-self.yaw2))
+        self.full_path_info.append(np.array([-self.wrapTo2Pi(self.wrapTo2Pi(-np.pi/2+entrance_angle)-self.yaw2)]))
 
 
     def LRL_path(self):
@@ -345,25 +348,25 @@ class DubinsGenerator():
         escape_angle = self.wrapTo2Pi(center_line_angle+beta+np.pi/2)
 
         #first arc
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_l)
-        self.full_path_info.append(self.wrapTo2Pi(escape_angle-self.yaw1))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(escape_angle-self.yaw1)]))
 
         # second arc 
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         center3 = self.c1_l+2*self.r_min*np.array([np.cos(center_line_angle+beta), np.sin(center_line_angle+beta)])
         tang1 = self.c1_l+self.r_min*np.array([np.cos(center_line_angle+beta), np.sin(center_line_angle+beta)])
         self.full_path_info.append(tang1)
         self.full_path_info.append(center3)
-        self.full_path_info.append(-(2*np.pi- 2*alpha))
+        self.full_path_info.append(np.array([-(2*np.pi- 2*alpha)]))
 
         #third arc
-        self.full_path_type.append('c')
+        self.full_path_type.append(PathInfo.ARC)
         entrance_angle = center_line_angle+beta-2*np.pi+2*alpha
         self.full_path_info.append(self.c2_l + self.r_min* np.array([np.cos(entrance_angle), np.sin(entrance_angle)]))
         self.full_path_info.append(self.c2_l)
-        self.full_path_info.append(self.wrapTo2Pi(self.yaw2-self.wrapTo2Pi(entrance_angle+np.pi/2)))
+        self.full_path_info.append(np.array([self.wrapTo2Pi(self.yaw2-self.wrapTo2Pi(entrance_angle+np.pi/2))]))
     
 
     def full_path_plot(self):
@@ -381,15 +384,15 @@ class DubinsGenerator():
         i = 0
         col=None
         for segment in self.full_path_type:
-            if segment=='c':
+            if segment==PathInfo.ARC:
                 theta1 = np.rad2deg(np.arctan2(self.full_path_info[i][1]- self.full_path_info[i+1][1], self.full_path_info[i][0]- self.full_path_info[i+1][0]))
 
-                if(self.full_path_info[i+2]>0):
-                    theta2 = theta1+ np.rad2deg(self.full_path_info[i+2])
+                if(self.full_path_info[i+2][0]>0):
+                    theta2 = theta1+ np.rad2deg(self.full_path_info[i+2][0])
                     col = 'm'
                 else:
                     temp = theta1
-                    theta1 = theta1+ np.rad2deg(self.full_path_info[i+2])
+                    theta1 = theta1+ np.rad2deg(self.full_path_info[i+2][0])
                     theta2 = temp
                     col = 'r'
 

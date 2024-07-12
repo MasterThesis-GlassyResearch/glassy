@@ -1,23 +1,23 @@
 #include "Arc.h"
 #include <glassy_utils/GlassyGeneralUtils.h>
 
-Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ):
- initial_point(start_point), final_point(final_point), center(center_circ)
-{
-    if(this->initial_point == this->final_point){
-        this->is_circle=true;
-        angle_scale = 2*M_PI;
-    } 
-    else{
-            Eigen::Vector2d dif_ini = this->initial_point-this->center;
-        // Eigen::Vector2d dif_fin = this->final_point-this->center;
-        this->ini_angle = atan2(dif_ini(1),dif_ini(0));
+// Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d final_point, Eigen::Vector2d center_circ):
+//  initial_point(start_point), final_point(final_point), center(center_circ)
+// {
+//     if(this->initial_point == this->final_point){
+//         this->is_circle=true;
+//         angle_scale = 2*M_PI;
+//     } 
+//     else{
+//             Eigen::Vector2d dif_ini = this->initial_point-this->center;
+//         // Eigen::Vector2d dif_fin = this->final_point-this->center;
+//         this->ini_angle = atan2(dif_ini(1),dif_ini(0));
         
-    }
+//     }
 
-    this->radius = (this->initial_point-this->center).norm();
+//     this->radius = (this->initial_point-this->center).norm();
 
-};
+// };
 
     
 Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_scale): initial_point(start_point), center(center_circ), angle_scale(angle_scale)  {
@@ -29,6 +29,15 @@ Arc::Arc(Eigen::Vector2d start_point, Eigen::Vector2d center_circ, float angle_s
     std::cout<<"Initializing Arc with center: " << this->center << std::endl;
 
     this->radius = (this->initial_point-this->center).norm();
+
+    float sign = 0.0;
+    if(this->angle_scale>0){
+        sign = 1;
+    } else{
+        sign = -1;
+    }
+    this->curvature = sign/this->radius;
+    
 };
 
 

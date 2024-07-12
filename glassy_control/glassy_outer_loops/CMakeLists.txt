@@ -23,6 +23,7 @@ find_package(rclcpp REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(glassy_msgs REQUIRED)
 find_package (Eigen3 REQUIRED)
+find_package (glassy_utils REQUIRED)
 
 
 
@@ -31,9 +32,9 @@ file(GLOB_RECURSE SOURCE_FILES src/PathFollowingNode/*.cpp ../control_lib/*.cpp)
 add_executable(glassy_outerloop src/glassy_outerloop_main.cpp ${SOURCE_FILES} )
 
 target_compile_features(glassy_outerloop PRIVATE cxx_std_20)
-target_include_directories(glassy_outerloop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PathFollowingNode ${CMAKE_CURRENT_SOURCE_DIR}/../control_lib ${EIGEN3_INCLUDE_DIR})
+target_include_directories(glassy_outerloop PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PathFollowingNode ${CMAKE_CURRENT_SOURCE_DIR}/../control_lib ${EIGEN3_INCLUDE_DIR} glassy_utils)
 
-ament_target_dependencies(glassy_outerloop rclcpp sensor_msgs glassy_msgs std_srvs)
+ament_target_dependencies(glassy_outerloop rclcpp sensor_msgs glassy_msgs std_srvs glassy_utils)
 
 install(TARGETS glassy_outerloop
   DESTINATION lib/${PROJECT_NAME})

@@ -18,11 +18,17 @@ T deg2rad(T degrees);
 template <typename T>
 T rad2deg(T radians);
 
+template <typename T> int sgn(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 float wrapToPi(float x);
 
 
 float wrapToTwoPi(float x);
+
+float clip_val(float, float, float);
+
 
 Eigen::Vector3d quat_to_euler_ZYX(Eigen::Quaterniond q);
 

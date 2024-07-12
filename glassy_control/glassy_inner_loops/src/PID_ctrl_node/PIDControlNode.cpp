@@ -9,7 +9,7 @@ PIDControlNode::PIDControlNode(std::shared_ptr<rclcpp::Node> node): pid_glassy_n
 {
     std::cout<<"Creating PID Controller Node...\n";
     this->prev_time = this->pid_glassy_node->get_clock()->now();
-    this->ctrlType = SURGE_YAW;
+    this->ctrlType = glassy_msgs::msg::InnerLoopReferences::SURGE_YAW;
 }
 
 
@@ -22,6 +22,9 @@ PIDControlNode::PIDControlNode(std::shared_ptr<rclcpp::Node> node): pid_glassy_n
  * @brief Calculate the control output and publish to the actuators
  */
 void PIDControlNode::direct_actuator_publish(){
+    if(this->is_active == false){
+        return;
+    }
     rclcpp::Time current_time = this->pid_glassy_node->get_clock()->now();
 
     rclcpp::Duration duration = current_time - this->prev_time;
@@ -33,9 +36,10 @@ void PIDControlNode::direct_actuator_publish(){
     // Start by taking care of the surge componnent:
     float pidValSurge = this->surgePIDCtrl.computePIDOutput(this->surge, this->surge_ref, duration.nanoseconds()/1e9, false);
 
+    // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Surge: %f, Surge Ref: %f, Surge PID: %f", this->surge, this->surge_ref, pidValSurge);
     // Now take care of YAW or YAWRATE
     float pidValYaw = 0.0;
-    if(this->ctrlType == SURGE_YAW){
+    if(this->ctrlType == glassy_msgs::msg::InnerLoopReferences::SURGE_YAW){
 
         // take care of ensuring shortest way to desired yaw
         if(this->yaw_ref-this->yaw>M_PI){
@@ -46,8 +50,12 @@ void PIDControlNode::direct_actuator_publish(){
 
         pidValYaw = this->yawPIDCtrl.computePIDOutput(this->yaw, this->yaw_ref, duration.nanoseconds()/1e9, false);
     } 
-    else if(this->ctrlType == SURGE_YAWRATE){
+    else if(this->ctrlType == glassy_msgs::msg::InnerLoopReferences::SURGE_YAW_RATE){
+        if(isnanf(this->yawRate_ref) ){
+            RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Yaw Rate Ref is NAN");
+        }
         pidValYaw = this->yawRatePIDCtrl.computePIDOutput(this->yawRate, this->yawRate_ref, duration.nanoseconds()/1e9, false);
+        // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Yaw Rate: %f, Yaw Rate Ref: %f, Yaw Rate PID: %f", this->yawRate, this->yawRate_ref, pidValYaw);
     } else{
         pidValYaw = 0.0;
     }
@@ -106,6 +114,7 @@ void PIDControlNode::direct_actuator_publish(){
     this->direct_actuator_msg.thrust = std::min(std::max( thrust_val, 0.f), 1.f);
     this->direct_actuator_msg.rudder = std::min(std::max( rudder_val, -1.f), 1.f);
 
+
     this->direct_actuator_msg.header.stamp = current_time;
     this->actuator_publisher->publish(this->direct_actuator_msg);
 }   
@@ -125,6 +134,7 @@ void PIDControlNode::referrence_subscription_callback(const glassy_msgs::msg::In
     this->surge_ref = msg->surge_ref;
     this->yaw_ref = msg->yaw_ref;
     this->yawRate_ref = msg->yaw_rate_ref;
+    this->ctrlType = msg->ctrl_type;
 }
 
 /**
@@ -292,21 +302,22 @@ void PIDControlNode::init(){
     this->pid_glassy_node->declare_parameter("pid_gains.surge", std::vector<double>({1.0, 0.1, 0.0}));
     this->pid_glassy_node->declare_parameter("pid_gains.yaw", std::vector<double>({1.0, 0.1, 0.0}));
     this->pid_glassy_node->declare_parameter("pid_gains.yaw_rate", std::vector<double>({1.0, 0.1, 0.0}));
+    this->pid_glassy_node->declare_parameter("cancel_dynamics", false);
 
     // Initialize all the parameters
     this->update_rate = this->pid_glassy_node->get_parameter("rates.inner_loop").as_double();
     std::vector<double> gains_surge = this->pid_glassy_node->get_parameter("pid_gains.surge").as_double_array();
     std::vector<double> gains_yaw = this->pid_glassy_node->get_parameter("pid_gains.yaw").as_double_array();
     std::vector<double> gains_yaw_rate = this->pid_glassy_node->get_parameter("pid_gains.yaw_rate").as_double_array();
+    this->cancel_dynamics = this->pid_glassy_node->get_parameter("cancel_dynamics").as_bool();
 
 
-
-    const auto node_graph_interface = this->pid_glassy_node->get_node_graph_interface();
 
     RCLCPP_INFO(this->pid_glassy_node->get_logger(), "surge gains: %.2f, %.2f, %.2f", gains_surge[0], gains_surge[1], gains_surge[2]);
     RCLCPP_INFO(this->pid_glassy_node->get_logger(), "yaw gains: %.2f, %.2f, %.2f", gains_yaw[0], gains_yaw[1], gains_yaw[2]);
     RCLCPP_INFO(this->pid_glassy_node->get_logger(), "yaw_rate gains: %.2f, %.2f, %.2f", gains_yaw_rate[0], gains_yaw_rate[1], gains_yaw_rate[2]);
     RCLCPP_INFO(this->pid_glassy_node->get_logger(), "update rate: %f", this->update_rate);
+    RCLCPP_INFO(this->pid_glassy_node->get_logger(), "cancel dynamics: %d", this->cancel_dynamics);
 
     /* -----------------------------
         Variable Initialization
@@ -316,6 +327,7 @@ void PIDControlNode::init(){
 
     this->surgePIDCtrl.set_gains(gains_surge[0], gains_surge[1], gains_surge[2]);
     this->yawPIDCtrl.set_gains(gains_yaw[0], gains_yaw[1], gains_yaw[2]);
+    this->yawRatePIDCtrl.set_gains(gains_yaw_rate[0], gains_yaw_rate[1], gains_yaw_rate[2]);
 
 
 
