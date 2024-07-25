@@ -13,7 +13,7 @@ int main(int argc, char ** argv)
     rclcpp::init(argc, argv);
 
     //create joystick node
-    std::cout << "starting inner loop node....\n";
+    std::cout << "starting path following node....\n";
     std::shared_ptr<rclcpp::Node> nh = rclcpp::Node::make_shared("glassy_PF");
 
     std::shared_ptr<PathFollowingNode> pathfollowing_com = std::make_shared<PathFollowingNode>(nh);

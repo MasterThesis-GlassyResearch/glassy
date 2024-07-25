@@ -12,7 +12,8 @@ Line::Line(Eigen::Vector2d start_point, Eigen::Vector2d final_point): initial_po
         -> (x1-x0) = grad;
     */
 
-    this->path_dot = this->final_point-this->initial_point;
+    this->path_dot = (this->final_point-this->initial_point).normalized();
+    this->path_dot_dot = Eigen::Vector2d(0,0);
 
     this->line_heading = atan2(this->path_dot(1), this->path_dot(0));
     std::cout<< "Initialized Line with starting point: " << this->initial_point << " and final point "<< this->final_point << std::endl;
@@ -50,6 +51,15 @@ Eigen::Vector2d Line::getClosestPoint(Eigen::Vector2d point){
 }
 
 
+Eigen::Vector2d Line::getPathDerivative(float gamma){
+    (void) gamma;
+    return this->path_dot;
+}
+
+Eigen::Vector2d Line::getPathSecondDerivative(float gamma){
+    (void) gamma;
+    return this->path_dot_dot;
+}
 
 Line::~Line()
 {

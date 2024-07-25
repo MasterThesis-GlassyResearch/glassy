@@ -16,6 +16,7 @@
 #include "std_srvs/srv/set_bool.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "MissionTypesPathManager.h"
+#include "std_msgs/msg/float64.hpp"
 
 #include "../PathTypes/Line.h"
 #include "../PathTypes/Arc.h"
@@ -25,11 +26,9 @@
 class PathManagementNode
 {
 private:
-    // service and subscriber callbacks
 
-    // values sent directly to actuators if correct mode is set
 
-    void ComputePathPointProperties(){};
+    void ComputePathPointProperties();
 
     Eigen::Vector2d pose_ned;
 
@@ -37,51 +36,47 @@ private:
 
     bool correct_home_position();
 
+    bool path_is_set = false;
 
-    bool path_is_set=false;
+    float lat = 0.0;
+    float lon = 0.0;
 
-    bool is_active=false;
-
-   float lat = 0.0;
-   float lon = 0.0;
-
-//    float home_lat = 0.0;
-//    float home_lon = 0.0;
-
+    // simulation mode
     bool is_simulation = true;
-   float home_lat = 38.766144;
-   float home_lon = -9.093334;
 
-   float x_correction=0.0;
-   float y_correction=0.0;
+    // home position if not in simulation
+    float home_lat = 38.766144;
+    float home_lon = -9.093334;
 
-   bool loop=false;
+    // correction values applied to path in NED frame
+    float x_correction = 0.0;
+    float y_correction = 0.0;
+
+    // if the path is a loop (if should restart)
+    bool loop = false;
+
+    // maximum and minimum surges that can be requested
+    float max_surge = 12;
+    float min_surge = 0;
 
 
+    bool is_active = false;
 
-   float max_surge = 12;
-   float min_surge = 0;
+    float rate = 10;
 
-   float max_yawrate = 1;
-   float min_yawrate = -1;
-
-   float speed = 2;
-
-   void ref_publish();
+    void ref_publish();
 
     std::vector<std::shared_ptr<PathBase>> path_segments;
     std::vector<float> requested_surge;
     int path_index = 0;
 
 public:
-
     PathManagementNode(std::shared_ptr<rclcpp::Node> node);
     ~PathManagementNode(){};
 
     void setPath(std::string file_location);
 
     std::shared_ptr<rclcpp::Node> pathmanagement_node;
-
 
     // subscribe to state
     rclcpp::Subscription<glassy_msgs::msg::State>::SharedPtr state_subscription;
@@ -95,24 +90,25 @@ public:
     rclcpp::Subscription<glassy_msgs::msg::PathInfo>::SharedPtr path_info_subscription;
     void path_info_subscription_callback(const glassy_msgs::msg::PathInfo::SharedPtr msg);
 
+    // subscribe to gamma
+    rclcpp::Subscription<std_msgs::msg::Float64>::SharedPtr gamma_subscription;
+    void gamma_subscription_callback(const std_msgs::msg::Float64::SharedPtr msg);
 
     glassy_msgs::msg::PathReferences pathref_msg;
 
     // publish directly to actuators
     rclcpp::Publisher<glassy_msgs::msg::PathReferences>::SharedPtr path_publisher;
 
-    //timer
+    // timer
     rclcpp::TimerBase::SharedPtr timer;
 
     // services...
     void set_path_srv_callback(const std::shared_ptr<glassy_msgs::srv::SetPath::Request> request, std::shared_ptr<glassy_msgs::srv::SetPath::Response> response);
     rclcpp::Service<glassy_msgs::srv::SetPath>::SharedPtr set_path_srv;
 
-
     // initialize the node
     void init();
     int mission_type = glassy_msgs::msg::MissionInfo::MISSION_OFF;
-
 
     /*
         Activation Logic

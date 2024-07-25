@@ -10,23 +10,19 @@
 class PathBase
 {
 protected:
-    /* data */
+    /**
+     * @brief data about the path
+     */
     Eigen::Vector2d initial_point;
     Eigen::Vector2d final_point;
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
 
 
-    virtual Eigen::Vector2d getPoint(float gamma){
-        (void) gamma;
-        return(Eigen::Vector2d(0.0, 0.0));};
-    float PathBase_heading;
 
 public:
     bool is_active=false;
     float curvature;
-
-    
     void activate(){
         this->is_active = true;
     };
@@ -35,14 +31,60 @@ public:
     };
 
     PathBase(/* args */){};
-    // PathBase(Eigen::Vector2d start_point, Eigen::Vector2d final_point);
+
+    /**
+     * @brief Get the closest point on the path to a given point
+     * 
+     */
     virtual Eigen::Vector2d getClosestPoint(Eigen::Vector2d point) {(void) point; return(Eigen::Vector2d(0.0, 0.0));};
 
+
+    /**
+     * @brief Get the point corresponding to a given gamma (parameterization of the path)
+     * 
+     * @param gamma
+     */
+    virtual Eigen::Vector2d getPoint(float gamma){
+        (void) gamma;
+        return(Eigen::Vector2d(0.0, 0.0));};
+
+    /**
+     * @brief Get the derivative of the path at a given point
+     *  
+     * @param gamma
+     */
+    virtual Eigen::Vector2d getPathDerivative(float gamma){
+        (void) gamma;
+        return(Eigen::Vector2d(0.0, 0.0));
+    };
+
+    /**
+     * @brief Get the second derivative of the path at a given point
+     * 
+     * @param gamma
+     */
+    virtual Eigen::Vector2d getPathSecondDerivative(float gamma){
+        (void) gamma;
+        return(Eigen::Vector2d(0.0, 0.0));
+    };
+
+
+    /**
+     * @brief Get the tangent heading of the path at a given point
+     * 
+     * @param point
+     */
     virtual float getTangHeading(Eigen::Vector2d point){
         (void) point;
         return(0.0);};
 
-    virtual float getCurvature(){return this->curvature;};
+    /** 
+     * @brief Get the curvature of the path at a given point
+     * 
+     * @param gamma
+     */
+    virtual float getCurvature(float gamma){(void) gamma; return this->curvature;};
+
 
     ~PathBase(){};
 

@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     rate: 20.0
-    controller_type: "LOS-r" # "LOS", "LOS-r" or "MPC"
+    controller_type: "LOS" # "LOS", "LOS-r" 
     LOS_gains:
       sigma: 0.1
       look_ahead: 3.0

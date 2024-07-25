@@ -42,7 +42,6 @@ private:
 
     
 
-    virtual Eigen::Vector2d getPoint(float gamma);
     virtual Eigen::Vector2d getPointGivenAngle(float angle);
     float PathBase_heading;
 
@@ -63,6 +62,11 @@ public:
     float curv = sign/this->radius;
     return curv;};
     ~Arc(){};
+
+
+    Eigen::Vector2d getPathDerivative(float gamma) override;
+    Eigen::Vector2d getPathSecondDerivative(float gamma) override;
+    Eigen::Vector2d getPoint(float gamma) override;
 
 };
 

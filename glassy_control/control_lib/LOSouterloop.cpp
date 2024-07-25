@@ -2,9 +2,39 @@
 #include "glassy_utils/GlassyGeneralUtils.h"
 
 
-LOSouterloop::LOSouterloop(){
+LOSouterloop::LOSouterloop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr inner_loop_ref_pub){
     this->references.push_back(0.0);
     this->references.push_back(0.0);
+
+        /* -----------------------------
+        Get the required parameters
+    -------------------------------*/
+    nd->declare_parameter("LOS_gains.look_ahead", 5.0);
+    nd->declare_parameter("LOS_gains.sigma", 0.0);
+    nd->declare_parameter("LOS_gains.max_int", 5.0);
+
+    clock = nd->get_clock();
+
+
+    float look_ahead = nd->get_parameter("LOS_gains.look_ahead").as_double();
+    float sigma = nd->get_parameter("LOS_gains.sigma").as_double();
+    float max_int = nd->get_parameter("LOS_gains.max_int").as_double();
+
+    RCLCPP_INFO(nd->get_logger(), "LOS Look Ahead: %f", look_ahead);
+    RCLCPP_INFO(nd->get_logger(), "LOS Sigma: %f", sigma);
+    RCLCPP_INFO(nd->get_logger(), "LOS max int: %f", max_int);
+
+    this->look_ahead_dist = look_ahead;
+    this->sigma = sigma;
+    this->max_int = max_int;
+
+    this->inner_loop_ref_msg.surge_ref = 0.0;
+    this->inner_loop_ref_msg.yaw_ref = 0.0;
+    this->inner_loop_ref_msg.yaw_rate_ref = 0.0;
+    this->inner_loop_ref_msg.ctrl_type = glassy_msgs::msg::InnerLoopReferences::SURGE_YAW;
+
+    this->publisher = inner_loop_ref_pub;
+
 }
 LOSouterloop::LOSouterloop(float look_ahead_dist): look_ahead_dist(look_ahead_dist), sigma(0.0){
 
@@ -21,9 +51,14 @@ void LOSouterloop::set_max_int(float max_int){
     this->max_int = max_int;
 }
 
-std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,float tangent_heading,float speed, float duration){
+void LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+
+    // to avoid warnings
+    (void) p_2nd_deriv;
+    
 
     Eigen::Matrix2d rot;
+    float tangent_heading = atan2(p_deriv(1), p_deriv(0));
     rot << cos(tangent_heading), sin(tangent_heading),
            -sin(tangent_heading), cos(tangent_heading);
     
@@ -51,7 +86,11 @@ std::vector<float> LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::
     }
     this->references[1] = heading_ref;
 
-    return references;
+    this->inner_loop_ref_msg.surge_ref = this->references[0];
+    this->inner_loop_ref_msg.yaw_ref = this->references[1];
+    this->inner_loop_ref_msg.header.stamp = this->clock->now();
+
+    this->publisher->publish(this->inner_loop_ref_msg);
 }
 
 

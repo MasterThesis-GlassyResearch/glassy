@@ -10,6 +10,7 @@
 
 #include "../control_lib/LOSouterloop.h"
 #include "../control_lib/LOSouterloopYawRate.h"
+#include "../control_lib/VanniOuterLoop.h"
 
 #include "MissionTypesOuterLoop.h"
 #include "glassy_msgs/msg/inner_loop_references.hpp"
@@ -20,6 +21,7 @@
 #include "glassy_msgs/msg/mission_info.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <eigen3/Eigen/Core>
+#include <std_msgs/msg/float64.hpp>
 
 class PathFollowingNode
 {
@@ -29,21 +31,22 @@ private:
     std::string controller_type = "LOS";
     LOSouterloop LOSPathFollowing;
     LOSouterloopYawRate LOSPathFollowingYawRate;
+    VanniOuterLoop VanniPathFollowing;
 
     Eigen::Vector2d pose;
     Eigen::Vector2d pose_ref;
-    float yaw;
-    float tangent_heading;
-    float curvature;
-    float curvature_deriv;
 
+    Eigen::Vector2d p_deriv;
+    Eigen::Vector2d p_2nd_deriv;
+
+    float yaw;
     float surge_ref = 0.0;
 
     bool is_active = false;
 
     float speed = 1;
 
-    void ref_publish();
+    void runController();
 
     long long int last_time_publishing_nanosecs = 0;
 
@@ -73,12 +76,13 @@ public:
     // Publishers ROS2
     rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr reference_publisher;
 
+    // gamma parameter publisher in case of a virtual target path following
+    rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_publisher;
+
     // Timer ROS2
     rclcpp::TimerBase::SharedPtr timer;
 
     // Services ROS2
-    void activate_deactivate_srv_callback(const std::shared_ptr<std_srvs::srv::SetBool::Request> request, std::shared_ptr<std_srvs::srv::SetBool::Response> response);
-    rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr activate_deactivate_pathfollowing;
     rclcpp::Service<glassy_msgs::srv::LosParams>::SharedPtr setLOSParams;
     void setLOSParams_callback(const std::shared_ptr<glassy_msgs::srv::LosParams::Request> request, std::shared_ptr<glassy_msgs::srv::LosParams::Response> response);
 

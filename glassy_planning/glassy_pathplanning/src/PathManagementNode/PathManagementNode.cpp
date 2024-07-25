@@ -23,7 +23,7 @@ PathManagementNode::PathManagementNode(std::shared_ptr<rclcpp::Node> node) : pat
 -----------------------------------*/
 
 /**
- * @brief Set the Path object
+ * @brief Set the Path object from a file containing the path information
  *
  * @param file_location
  */
@@ -151,9 +151,9 @@ void PathManagementNode::ref_publish()
         }
         else
         {
-            this->pathref_msg.x_ref = 0.0;
-            this->pathref_msg.y_ref = 0.0;
-            this->pathref_msg.is_active = 0;
+            this->pathref_msg.pose_ref[0] = 0.0;
+            this->pathref_msg.pose_ref[1] = 0.0;
+            this->pathref_msg.is_set = 0;
             this->pathref_msg.path_vel = 0.0;
             this->path_publisher->publish(this->pathref_msg);
 
@@ -165,10 +165,10 @@ void PathManagementNode::ref_publish()
     Eigen::Vector2d result = this->path_segments[this->path_index]->getClosestPoint(this->pose_ned);
 
     this->pathref_msg.path_segment_index = this->path_index;
-    this->pathref_msg.x_ref = result(0);
-    this->pathref_msg.y_ref = result(1);
-    this->pathref_msg.is_active = 1;
-    this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature();
+    this->pathref_msg.pose_ref[0] = result(0);
+    this->pathref_msg.pose_ref[1] = result(1);
+    this->pathref_msg.is_set = 1;
+    this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(0.0);
     if (int(this->requested_surge.size()) > 0){
         this->pathref_msg.path_vel = this->requested_surge[this->path_index];
     } else{
@@ -241,6 +241,29 @@ void PathManagementNode::state_subscription_callback(const glassy_msgs::msg::Sta
     this->lat = msg->lat;
     this->lon = msg->lon;
 }
+
+/**
+ * @brief Subscribe and get info about current gamma
+ * 
+ * @param msg 
+ */
+
+void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float64::SharedPtr msg)
+{   
+    // fill in the path msg 
+    
+
+    this->pathref_msg.curvature = msg->data;
+    this->pathref_msg.pose_ref[0] = this->pose_ned(0);
+    this->pathref_msg.pose_ref[1] = this->pose_ned(1);    
+    this->pathref_msg.tangent_heading = 0.0;
+    this->pathref_msg.is_set = 1;
+    this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
+    this->pathref_msg.path_vel = 3.0;
+
+    this->path_publisher->publish(this->pathref_msg);
+}
+
 
 /**
  * @brief Callback for the mission info
@@ -368,13 +391,42 @@ void PathManagementNode::init()
     // get parameters (rates/ max surge/ max yawrate)
     // get parameters file locations
 
+    this->pathmanagement_node->declare_parameter("glassy_pathman.folder_paths", this->path_file_directory);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.is_simulation", this->is_simulation);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.path_defs.home_lat", this->home_lat);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.path_defs.home_lon", this->home_lon);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.rate", this->rate);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.path_defs.get_closest_point", false);
+    this->pathmanagement_node->declare_parameter("glassy_pathman.path_defs.control_gamma", true);
+
+
+    this->path_file_directory = this->pathmanagement_node->get_parameter("glassy_pathman.folder_paths").as_string();
+    this->is_simulation = this->pathmanagement_node->get_parameter("glassy_pathman.is_simulation").as_bool();
+    this->home_lat = this->pathmanagement_node->get_parameter("glassy_pathman.path_defs.home_lat").as_double();
+    this->home_lon = this->pathmanagement_node->get_parameter("glassy_pathman.path_defs.home_lon").as_double();
+    this->rate = this->pathmanagement_node->get_parameter("glassy_pathman.rate").as_double();
+    bool control_gamma = this->pathmanagement_node->get_parameter("glassy_pathman.path_defs.control_gamma").as_bool();
+    bool get_closest_point = this->pathmanagement_node->get_parameter("glassy_pathman.path_defs.get_closest_point").as_bool();
+
+    // print out the parameters
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path File Directory: %s", this->path_file_directory.c_str());
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Is Simulation: %d", this->is_simulation);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Home Latitude: %f", this->home_lat);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Home Longitude: %f", this->home_lon);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Rate: %f", this->rate);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Control Gamma: %d", control_gamma);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Get Closest Point: %d", get_closest_point);
+
     /* -----------------------------
         ROS2 Service Initialization
     -------------------------------*/
-
-    // subscribe to state topic
-    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
-
+    if(get_closest_point){
+        // subscribe to state topic
+        this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
+    } else{
+        // subscribe to gamma topic
+        this->gamma_subscription = this->pathmanagement_node->create_subscription<std_msgs::msg::Float64>("/glassy/gamma", 1, std::bind(&PathManagementNode::gamma_subscription_callback, this, _1));
+    }
     // subscribe to the mission info
     this->mission_info_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::MissionInfo>("/glassy/mission_status", 1, std::bind(&PathManagementNode::mission_info_subscription_callback, this, _1));
 

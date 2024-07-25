@@ -17,7 +17,6 @@ private:
     Eigen::Vector2d path_dot;
     Eigen::Vector2d path_dot_dot;
 
-    Eigen::Vector2d getPoint(float gamma);
     float line_heading;
 
 public:
@@ -30,6 +29,9 @@ public:
     ~Line();
 
 
+    Eigen::Vector2d getPoint(float gamma) override;
+    Eigen::Vector2d getPathDerivative(float gamma) override;
+    Eigen::Vector2d getPathSecondDerivative(float gamma) override;
 
 
 };

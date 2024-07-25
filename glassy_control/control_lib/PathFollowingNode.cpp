@@ -21,7 +21,7 @@ PathFollowingNode::PathFollowingNode(std::shared_ptr<rclcpp::Node> node): pathfo
 
 
 
-void PathFollowingNode::ref_publish(){
+void PathFollowingNode::runController(){
 
     if(!this->is_active){
         this->inner_loop_ref_msg.yaw_ref = 0.0;
@@ -48,21 +48,24 @@ void PathFollowingNode::ref_publish(){
 
     if(this->controller_type=="LOS"){
         // compute the output of the LOS controller (surge, yaw, yaw_rate)
-        std::vector<float> res_los = this->LOSPathFollowing.computeOutput(this->pose_ref, this->pose,this->tangent_heading, this->speed, duration);
-        this->inner_loop_ref_msg.surge_ref= this->surge_ref;
-        this->inner_loop_ref_msg.yaw_ref= res_los[1];
-        this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW;
+        this->LOSPathFollowing.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+        // this->inner_loop_ref_msg.surge_ref= this->surge_ref;
+        // this->inner_loop_ref_msg.yaw_ref= res_los[1];
+        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW;
     } else if(this->controller_type=="LOS-r"){
 
         // compute the output of the LOS controller (surge, yaw, yaw_rate)
-        std::vector<float> res_los_yr = this->LOSPathFollowingYawRate.computeOutput(this->pose_ref, this->pose, this->yaw ,this->tangent_heading, this->curvature, this->speed, duration);
-        // load the message
-        RCLCPP_INFO(this->pathfollowing_node->get_logger(), "Yaw Rate ref: %f", res_los_yr[1]);
+        // std::vector<float> res_los_yr = this->LOSPathFollowingYawRate.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+        // // load the message
+        // RCLCPP_INFO(this->pathfollowing_node->get_logger(), "Yaw Rate ref: %f", res_los_yr[1]);
         
-        this->inner_loop_ref_msg.surge_ref= this->surge_ref;
-        this->inner_loop_ref_msg.yaw_ref= 0.0;
-        this->inner_loop_ref_msg.yaw_rate_ref = res_los_yr[1];
-        this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
+        // this->inner_loop_ref_msg.surge_ref= this->surge_ref;
+        // this->inner_loop_ref_msg.yaw_ref= 0.0;
+        // this->inner_loop_ref_msg.yaw_rate_ref = res_los_yr[1];
+        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
+    } else if(this->controller_type=="Vanni"){
+        // std::vector<float> res_vanni = this->VanniPathFollowing.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
     }
 
     this->inner_loop_ref_msg.header.stamp = this->pathfollowing_node->get_clock()->now();
@@ -80,12 +83,12 @@ void PathFollowingNode::ref_publish(){
 
 void PathFollowingNode::path_subscription_callback(const glassy_msgs::msg::PathReferences::SharedPtr msg){
     // Set the correct references to track...
-    this->pose_ref(0) = msg->x_ref;
-    this->pose_ref(1) = msg->y_ref;
-    this->tangent_heading = msg->tangent_heading;
-    this->surge_ref = msg->path_vel;
-    this->curvature = msg->curvature;
-    // this->is_active = msg->is_active;
+    if(!msg->is_set){
+        return;
+    }  
+    this->p_deriv = Eigen::Vector2d(msg->path_deriv[0], msg->path_deriv[1]);
+    this->p_2nd_deriv = Eigen::Vector2d(msg->path_secnd_deriv[0], msg->path_secnd_deriv[1]);
+    this->pose_ref = Eigen::Vector2d(msg->pose_ref[0], msg->pose_ref[1]);
 
 }
 
@@ -139,45 +142,38 @@ void PathFollowingNode::deactivate(){
 void PathFollowingNode::init(){
 
 
-    
-    
+
     /* -----------------------------
-        Get the required parameters
+        Get the node parameters
     -------------------------------*/
-    this->pathfollowing_node->declare_parameter("controller_type", "LOS");
-    this->pathfollowing_node->declare_parameter("LOS_gains.look_ahead", 5.0);
-    this->pathfollowing_node->declare_parameter("LOS_gains.sigma", 0.0);
-    this->pathfollowing_node->declare_parameter("LOS_gains.max_int", 5.0);
+
     this->pathfollowing_node->declare_parameter("rate", 20.0);
-    this->pathfollowing_node->declare_parameter("LOS_yr_gains.k1", 10.0);
-    this->pathfollowing_node->declare_parameter("LOS_yr_gains.k2", 10.0);
-
-
-    float look_ahead = this->pathfollowing_node->get_parameter("LOS_gains.look_ahead").as_double();
-    float sigma = this->pathfollowing_node->get_parameter("LOS_gains.sigma").as_double();
-    float max_int = this->pathfollowing_node->get_parameter("LOS_gains.max_int").as_double();
     float rate = this->pathfollowing_node->get_parameter("rate").as_double();
 
-    float k1 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k1").as_double();
-    float k2 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k2").as_double();
-
+    this->pathfollowing_node->declare_parameter("controller_type", "LOS");
     this->controller_type = this->pathfollowing_node->get_parameter("controller_type").as_string();
+
+
+    // nd->declare_parameter("LOS_yr_gains.k1", 10.0);
+    // nd->declare_parameter("LOS_yr_gains.k2", 10.0);
+
+    // float k1 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k1").as_double();
+    // float k2 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k2").as_double();
+
 
 
     // print all the parameters 
     RCLCPP_INFO(this->pathfollowing_node->get_logger(), "Controller Type: %s", this->controller_type.c_str());
-    RCLCPP_INFO(this->pathfollowing_node->get_logger(), "LOS Look Ahead: %f", look_ahead);
-    RCLCPP_INFO(this->pathfollowing_node->get_logger(), "LOS Sigma: %f", sigma);
-    RCLCPP_INFO(this->pathfollowing_node->get_logger(), "LOS max int: %f", max_int);
-    RCLCPP_INFO(this->pathfollowing_node->get_logger(), "OuterLoop raye: %f", rate);
+    RCLCPP_INFO(this->pathfollowing_node->get_logger(), "OuterLoop rate: %f", rate);
 
     // prepare the LOS controller
     if(this->controller_type=="LOS"){
-        this->LOSPathFollowing = LOSouterloop(look_ahead, sigma);
-        this->LOSPathFollowing.set_max_int(max_int);
+        this->LOSPathFollowing = LOSouterloop(this->pathfollowing_node, this->reference_publisher);
     }else if(this->controller_type=="LOS-r")
     {
-        this->LOSPathFollowingYawRate = LOSouterloopYawRate(k1, k2);
+        // this->LOSPathFollowingYawRate = LOSouterloopYawRate(k1, k2);
+    } else if(this->controller_type=="Vanni"){
+        // this->VanniPathFollowing = VanniOuterloop(this->pathfollowing_node, this->reference_publisher, this->gamma_publisher);
     }
 
 
@@ -192,8 +188,9 @@ void PathFollowingNode::init(){
 
     // initialize publisher
     this->reference_publisher = this->pathfollowing_node->create_publisher<glassy_msgs::msg::InnerLoopReferences>("/glassy/innerloop_refs", 1);
+    this->gamma_publisher = this->pathfollowing_node->create_publisher<glassy_msgs::msg::Gamma>("/glassy/gamma", 1);
 
-    this->timer = this->pathfollowing_node->create_wall_timer(1.0s/rate, std::bind(&PathFollowingNode::ref_publish, this));
+    this->timer = this->pathfollowing_node->create_wall_timer(1.0s/rate, std::bind(&PathFollowingNode::runController, this));
 
 
     // Initialize the services
