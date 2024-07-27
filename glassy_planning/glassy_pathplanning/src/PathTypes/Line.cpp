@@ -4,7 +4,7 @@ Line::Line(/* args */)
 {
 }
 
-Line::Line(Eigen::Vector2d start_point, Eigen::Vector2d final_point): initial_point(start_point), final_point(final_point), path_dot_dot(0,0)
+Line::Line(Eigen::Vector2d start_point, Eigen::Vector2d final_point): initial_point(start_point), final_point(final_point)
 {
 
     /*

@@ -10,6 +10,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "glassy_utils/GlassyGeneralUtils.h"
 #include "glassy_msgs/msg/inner_loop_references.hpp"
+#include "glassy_msgs/msg/state.hpp"
 #include <OuterLoop.h>
 
 class LOSouterloop : public OuterLoop
@@ -36,7 +37,7 @@ public:
     LOSouterloop(float look_ahead_dist, float sigma);
     LOSouterloop(){};
     ~LOSouterloop(){};
-    void computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration) override;
+    void computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration) override;
 
     void change_look_ahead_dist(float param);
     void change_sigma(float param);

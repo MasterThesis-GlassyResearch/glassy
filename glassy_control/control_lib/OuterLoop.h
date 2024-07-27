@@ -7,7 +7,8 @@
 #include <iostream>
 #include <stdlib.h>
 #include <cmath>
-
+#include <rclcpp/rclcpp.hpp>
+#include "glassy_msgs/msg/state.hpp"
 
 class OuterLoop
 {
@@ -20,10 +21,10 @@ public:
         references.push_back(0.0);
     };
     ~OuterLoop(){};
-    virtual void computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+    virtual void computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
         // since nothing runs here, to avoid warnings 
         (void) pose_ref;
-        (void) pose;
+        (void) state;
         (void) p_deriv;
         (void) p_2nd_deriv;
         (void) speed;

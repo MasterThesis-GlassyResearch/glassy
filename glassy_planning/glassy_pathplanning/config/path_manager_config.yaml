@@ -2,12 +2,12 @@
   ros__parameters:
     glassy_pathman:
       path_defs:
-        get_closest_point: false
-        control_gamma: true
+        get_closest_point: true
+        control_gamma: false
         home_lat: 0.0
         home_lon: 0.0
 
       is_simulation: true
 
       folder_paths: "/home/joaolehodey/glassy_ws/src/glassy_planning/glassy_pathplanning/PathExamples/"
-      rate: 10
+      rate: 10.0

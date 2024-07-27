@@ -168,16 +168,31 @@ void PathManagementNode::ref_publish()
     this->pathref_msg.pose_ref[0] = result(0);
     this->pathref_msg.pose_ref[1] = result(1);
     this->pathref_msg.is_set = 1;
+
     this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(0.0);
+    Eigen::Vector2d path_dot(cos(this->pathref_msg.tangent_heading), sin(this->pathref_msg.tangent_heading));
+
+    // Eigen::Vector2d path_dot_dot = this->path_segments[this->path_index]->getPathSecondDerivative(0.0);
+
+    this->pathref_msg.path_deriv[0] = path_dot(0);
+    this->pathref_msg.path_deriv[1] = path_dot(1);
+
     if (int(this->requested_surge.size()) > 0){
         this->pathref_msg.path_vel = this->requested_surge[this->path_index];
     } else{
         this->pathref_msg.path_vel = 3.0;
     }
+    this->pathref_msg.tangent_heading = this->path_segments[this->path_index]->getTangHeading(this->pose_ned);
+
 
     std::cout << "path_seg = " << this->path_index << std::endl;
+    std::cout << "path_vel = " << this->pathref_msg.path_vel << std::endl;
+    std::cout << "path_curv = " << this->pathref_msg.curvature << std::endl;
+    std::cout << "path_x = " << this->pathref_msg.pose_ref[0] << std::endl;
+    std::cout << "path_y = " << this->pathref_msg.pose_ref[1] << std::endl;
+    std::cout << "path_tan = " << this->pathref_msg.tangent_heading << std::endl;
 
-    this->pathref_msg.tangent_heading = this->path_segments[this->path_index]->getTangHeading(this->pose_ned);
+
 
     this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now();
 
@@ -250,13 +265,33 @@ void PathManagementNode::state_subscription_callback(const glassy_msgs::msg::Sta
 
 void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float64::SharedPtr msg)
 {   
-    // fill in the path msg 
-    
+    if(!this->path_is_set){
+        this->pathref_msg.is_set = 0;
+        this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
+        this->pathref_msg.path_vel = 0.0;
 
-    this->pathref_msg.curvature = msg->data;
+        this->path_publisher->publish(this->pathref_msg);
+        return;
+    }
+    // fill in the path msg 
+    Eigen::Vector2d point = this->path_segments[this->path_index]->getPoint(msg->data);
+    this->pathref_msg.pose_ref[0] = point(0);
+    this->pathref_msg.pose_ref[1] = point(1);
+
+    // fill the path dot
+    Eigen::Vector2d path_dot = this->path_segments[this->path_index]->getPathDerivative(msg->data);
+    this->pathref_msg.path_deriv[0] = path_dot(0);
+    this->pathref_msg.path_deriv[1] = path_dot(1);
+
+    // fill the path dot dot
+    Eigen::Vector2d path_dot_dot = this->path_segments[this->path_index]->getPathSecondDerivative(msg->data);
+    this->pathref_msg.path_secnd_deriv[0] = path_dot_dot(0);
+    this->pathref_msg.path_secnd_deriv[1] = path_dot_dot(1);
+
+    this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(msg->data);
     this->pathref_msg.pose_ref[0] = this->pose_ned(0);
     this->pathref_msg.pose_ref[1] = this->pose_ned(1);    
-    this->pathref_msg.tangent_heading = 0.0;
+    this->pathref_msg.tangent_heading = atan2(path_dot(1), path_dot(0));
     this->pathref_msg.is_set = 1;
     this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
     this->pathref_msg.path_vel = 3.0;
@@ -358,7 +393,9 @@ void PathManagementNode::set_path_srv_callback(const std::shared_ptr<glassy_msgs
 void PathManagementNode::activate()
 {
     this->is_active = true;
-    this->timer->reset();
+    if(this->use_timer){
+        this->timer->reset();
+    }
     RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Manager Activated");
     if (!this->is_simulation)
     {
@@ -373,7 +410,9 @@ void PathManagementNode::deactivate()
 {
     this->is_active = false;
     this->loop = false;
-    this->timer->cancel();
+    if(this->use_timer){
+        this->timer->cancel();
+    }
     RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Manager Deactivated");
 }
 
@@ -423,6 +462,9 @@ void PathManagementNode::init()
     if(get_closest_point){
         // subscribe to state topic
         this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
+        // initialize timer, -> dictates when to publish
+        this->timer = this->pathmanagement_node->create_wall_timer(1s/this->rate, std::bind(&PathManagementNode::ref_publish, this));
+        this->use_timer=true;
     } else{
         // subscribe to gamma topic
         this->gamma_subscription = this->pathmanagement_node->create_subscription<std_msgs::msg::Float64>("/glassy/gamma", 1, std::bind(&PathManagementNode::gamma_subscription_callback, this, _1));
@@ -436,8 +478,7 @@ void PathManagementNode::init()
     // initialize publisher
     this->path_publisher = this->pathmanagement_node->create_publisher<glassy_msgs::msg::PathReferences>("/glassy/path_refs", 1);
 
-    // initialize timer, -> dictates when to publish
-    this->timer = this->pathmanagement_node->create_wall_timer(100ms, std::bind(&PathManagementNode::ref_publish, this));
+
 
     // service setup
     this->set_path_srv = this->pathmanagement_node->create_service<glassy_msgs::srv::SetPath>("/glassy/set_path", std::bind(&PathManagementNode::set_path_srv_callback, this, _1, _2));

@@ -51,19 +51,41 @@ void LOSouterloop::set_max_int(float max_int){
     this->max_int = max_int;
 }
 
-void LOSouterloop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+void LOSouterloop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref, Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
 
     // to avoid warnings
     (void) p_2nd_deriv;
-    
+
+
+
+
+
+    Eigen::Vector2d pose(state->p_ned[0], state->p_ned[1]);  
 
     Eigen::Matrix2d rot;
     float tangent_heading = atan2(p_deriv(1), p_deriv(0));
     rot << cos(tangent_heading), sin(tangent_heading),
            -sin(tangent_heading), cos(tangent_heading);
-    
+
+
+
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "LOS outer loop computing output...");
+    // info variaables to debug
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Pose ref: %f, %f", pose_ref(0), pose_ref(1));    
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "p_deriv: %f, %f", p_deriv(0), p_deriv(1));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "p_2nd_deriv: %f, %f", p_2nd_deriv(0), p_2nd_deriv(1));
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Speed: %f", speed);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Duration: %f", duration);
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Pose: %f, %f", state->p_ned[0], state->p_ned[1]);  
+    RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Tangent heading: %f", tangent_heading); 
 
     Eigen::Vector2d error_path_coord =  rot*(pose - pose_ref);
+
+    // check if any nan value
+    if(std::isnan(error_path_coord(0)) || std::isnan(error_path_coord(1))){
+        RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "NAN value detected in error path coord...");
+        return;
+    }
 
     if(this->sigma!=0 && duration<0.2){
         this->integral_val = clip_val((this->integral_val+ duration*(this->look_ahead_dist*(error_path_coord(1))/((error_path_coord(1) +

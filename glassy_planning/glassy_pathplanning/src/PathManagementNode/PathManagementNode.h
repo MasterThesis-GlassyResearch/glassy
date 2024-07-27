@@ -59,6 +59,8 @@ private:
     float max_surge = 12;
     float min_surge = 0;
 
+    bool use_timer = false;
+
 
     bool is_active = false;
 

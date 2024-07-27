@@ -11,13 +11,13 @@ def generate_launch_description():
     # Get the name of the .yaml configuration file either from the package or an external source
     glassy_planning_config_arg = DeclareLaunchArgument(
         'glassy_planning_yaml', 
-        default_value=os.path.join(get_package_share_directory('glassy_planning'), 'config', 'path_manager_config.yaml'),
+        default_value=os.path.join(get_package_share_directory('glassy_pathplanning'), 'config', 'path_manager_config.yaml'),
         description='The configurations for the path gen node')
 
     glassy_planning_node = Node(
-                package='glassy_planning',
+                package='glassy_pathplanning',
                 namespace=[],
-                executable='glassy_planning',
+                executable='glassy_pathplanning',
                 parameters=[ 
                     # Pass the file which contains the topics configuration and rates for telemetry
                     LaunchConfiguration('glassy_planning_yaml'),

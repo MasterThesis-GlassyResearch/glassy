@@ -1,6 +1,13 @@
 #include "./LOSouterloopYawRate.h"
 #include <rclcpp/rclcpp.hpp>
 
+
+    // nd->declare_parameter("LOS_yr_gains.k1", 10.0);
+    // nd->declare_parameter("LOS_yr_gains.k2", 10.0);
+
+    // float k1 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k1").as_double();
+    // float k2 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k2").as_double();
+
 std::vector<float> LOSouterloopYawRate::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose, float yaw,float tangent_heading, float signed_curvature, float speed, float duration){
 
     (void) duration;    

@@ -48,7 +48,8 @@ void PathFollowingNode::runController(){
 
     if(this->controller_type=="LOS"){
         // compute the output of the LOS controller (surge, yaw, yaw_rate)
-        this->LOSPathFollowing.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+        this->speed = 2.0;
+        this->LOSPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
         // this->inner_loop_ref_msg.surge_ref= this->surge_ref;
         // this->inner_loop_ref_msg.yaw_ref= res_los[1];
         // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW;
@@ -64,7 +65,7 @@ void PathFollowingNode::runController(){
         // this->inner_loop_ref_msg.yaw_rate_ref = res_los_yr[1];
         // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
     } else if(this->controller_type=="Vanni"){
-        // std::vector<float> res_vanni = this->VanniPathFollowing.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+        this->VanniPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
         // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
     }
 
@@ -73,7 +74,7 @@ void PathFollowingNode::runController(){
 
 
     // publish message
-    this->reference_publisher->publish(this->inner_loop_ref_msg);
+    // this->reference_publisher->publish(this->inner_loop_ref_msg);
     this->last_time_publishing_nanosecs = current_time;
 }   
 
@@ -96,6 +97,10 @@ void PathFollowingNode::state_subscription_callback(const glassy_msgs::msg::Stat
     this->pose(0) = msg->p_ned[0];
     this->pose(1) = msg->p_ned[1];
     this->yaw = msg->yaw;
+
+
+
+    this->state_struct = msg; 
 }
 
 /**
@@ -153,12 +158,6 @@ void PathFollowingNode::init(){
     this->pathfollowing_node->declare_parameter("controller_type", "LOS");
     this->controller_type = this->pathfollowing_node->get_parameter("controller_type").as_string();
 
-
-    // nd->declare_parameter("LOS_yr_gains.k1", 10.0);
-    // nd->declare_parameter("LOS_yr_gains.k2", 10.0);
-
-    // float k1 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k1").as_double();
-    // float k2 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k2").as_double();
 
 
 

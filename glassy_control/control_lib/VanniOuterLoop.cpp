@@ -17,6 +17,33 @@ VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publish
     this->references.push_back(0.0);
 }
 
-void VanniOuterLoop::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+    // for now ignore all parameters
+    (void) pose_ref;
+    (void) state;
+    (void) p_deriv;
+    (void) p_2nd_deriv;
+    (void) speed;
+    (void) duration;
+
+
+    // get current time:
+    float current_time = clock->now().seconds();
+    float dt = current_time - prev_time;
+
+    if(dt > 0.1){
+        // do something        
+    }
+
     
+    // get the 
+
+
+
+
+
+
+    // update the previous time
+    prev_time = current_time;
+    // lets implement this thing
 }

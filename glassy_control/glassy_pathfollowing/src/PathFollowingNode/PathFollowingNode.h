@@ -39,6 +39,8 @@ private:
     Eigen::Vector2d p_deriv;
     Eigen::Vector2d p_2nd_deriv;
 
+    glassy_msgs::msg::State::SharedPtr state_struct;
+
     float yaw;
     float surge_ref = 0.0;
 
