@@ -16,7 +16,7 @@
 #include <glassy_msgs/msg/state.hpp>
 
 
-class VanniOuterLoop
+class VanniOuterLoop : public OuterLoop
 {
 private:
     /* data */
@@ -24,11 +24,11 @@ private:
     float k1_;
     float k2_;
     float gamma_ = 0.0;
-    float gamma_dot = 0.0;
-    float gamma_dot_dot = 0.0;
+    float gamma_dot_ = 0.0;
+    float gamma_dot_dot_ = 0.0;
 
-    float prev_time = 0.0;
-
+    float prev_time_ = 0.0;
+    bool is_on_=false;
 
     // publishers for inner loop and gamma
     rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr ref_publisher;
@@ -39,6 +39,9 @@ private:
     rclcpp::Clock::SharedPtr clock;
 
     glassy_msgs::msg::InnerLoopReferences inner_loop_ref_msg;
+    std_msgs::msg::Float64 gamma_msg_;
+
+    rclcpp::Node::SharedPtr node_ptr_;
 
 
 
@@ -47,7 +50,7 @@ public:
     VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr inner_loop_ref_pub, rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_pub);
     ~VanniOuterLoop(){};
     void computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration) ;
-
+    void reset();
 };
 
 

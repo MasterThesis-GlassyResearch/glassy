@@ -265,6 +265,7 @@ void PathManagementNode::state_subscription_callback(const glassy_msgs::msg::Sta
 
 void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float64::SharedPtr msg)
 {   
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Gamma callback with gamma = %f", msg->data);
     if(!this->path_is_set){
         this->pathref_msg.is_set = 0;
         this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
@@ -273,29 +274,59 @@ void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float6
         this->path_publisher->publish(this->pathref_msg);
         return;
     }
+
+    float gamma = std::max(0.0, msg->data);
+    this->path_index = floor(msg->data);
+    gamma = gamma - this->path_index;
+
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Gamma: %f", gamma);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Index: %d", this->path_index);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Msg Data: %f", msg->data);
+
+    // handle the case where the path index is greater than the size of the path
+    // either stop the path, or loop the path
+    if(msg->data>size(this->path_segments)){
+        if(this->loop){
+            this->path_index = this->path_index % size(this->path_segments);
+            gamma = gamma - floor(this->path_index/size(this->path_segments));
+        } else{
+            this->pathref_msg.is_set = false;
+            this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
+            this->pathref_msg.path_vel = 0.0;
+
+            this->path_publisher->publish(this->pathref_msg);
+            return;
+        }
+    }
+
+    // ensure the current path segment is active
+    this->path_segments[this->path_index]->activate();
+
     // fill in the path msg 
-    Eigen::Vector2d point = this->path_segments[this->path_index]->getPoint(msg->data);
+    Eigen::Vector2d point = this->path_segments[this->path_index]->getPoint(gamma);
+    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Point: %f %f", point(0), point(1));
     this->pathref_msg.pose_ref[0] = point(0);
     this->pathref_msg.pose_ref[1] = point(1);
 
     // fill the path dot
-    Eigen::Vector2d path_dot = this->path_segments[this->path_index]->getPathDerivative(msg->data);
+    Eigen::Vector2d path_dot = this->path_segments[this->path_index]->getPathDerivative(gamma);
     this->pathref_msg.path_deriv[0] = path_dot(0);
     this->pathref_msg.path_deriv[1] = path_dot(1);
 
     // fill the path dot dot
-    Eigen::Vector2d path_dot_dot = this->path_segments[this->path_index]->getPathSecondDerivative(msg->data);
+    Eigen::Vector2d path_dot_dot = this->path_segments[this->path_index]->getPathSecondDerivative(gamma);
     this->pathref_msg.path_secnd_deriv[0] = path_dot_dot(0);
     this->pathref_msg.path_secnd_deriv[1] = path_dot_dot(1);
 
-    this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(msg->data);
-    this->pathref_msg.pose_ref[0] = this->pose_ned(0);
-    this->pathref_msg.pose_ref[1] = this->pose_ned(1);    
+    // get some aditional info
+    this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(gamma);  
     this->pathref_msg.tangent_heading = atan2(path_dot(1), path_dot(0));
     this->pathref_msg.is_set = 1;
     this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
     this->pathref_msg.path_vel = 3.0;
+    this->pathref_msg.path_segment_index = this->path_index;
 
+    // publish the message
     this->path_publisher->publish(this->pathref_msg);
 }
 

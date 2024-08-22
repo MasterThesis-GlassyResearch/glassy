@@ -31,6 +31,7 @@ void PathFollowingNode::runController(){
 
         // publish message
         this->reference_publisher->publish(this->inner_loop_ref_msg);
+        this->last_time_publishing_nanosecs = this->pathfollowing_node->get_clock()->now().nanoseconds(); 
         return;
     }
 
@@ -85,6 +86,8 @@ void PathFollowingNode::runController(){
 void PathFollowingNode::path_subscription_callback(const glassy_msgs::msg::PathReferences::SharedPtr msg){
     // Set the correct references to track...
     if(!msg->is_set){
+        this->deactivate();
+        RCLCPP_INFO(this->pathfollowing_node->get_logger(), "Path Following UNACTIVATED - Path not set / Finished");
         return;
     }  
     this->p_deriv = Eigen::Vector2d(msg->path_deriv[0], msg->path_deriv[1]);

@@ -133,8 +133,11 @@ Eigen::Vector2d Arc::getPathDerivative(float gamma){
     gamma= std::min(std::max(0.f, gamma), 1.f);
     float angle = wrapToPi((this->ini_angle+gamma*(this->angle_scale)));
 
-    Eigen::Vector2d path_deriv(-sin(angle), cos(angle));
+    Eigen::Vector2d path_deriv(this->radius * angle_scale*-sin(angle), this->radius * angle_scale* cos(angle));
 
+
+    std::cout<<"Path deriv: "<<path_deriv<<std::endl;
+    std::cout<<"calculating path deriv"<<std::endl;
     return path_deriv;
 };
 
@@ -150,5 +153,5 @@ Eigen::Vector2d Arc::getPathSecondDerivative(float gamma){
 
     Eigen::Vector2d path_deriv_deriv(-cos(angle), -sin(angle));
 
-    return path_deriv_deriv;
+    return (this->radius * angle_scale)*(this->radius * angle_scale)  *path_deriv_deriv;
 };

@@ -7,6 +7,7 @@
 #include <future>
 #include <fstream>
 #include <algorithm>
+#include <cmath>
 
 #include "glassy_msgs/msg/path_references.hpp"
 #include "glassy_msgs/msg/state.hpp"

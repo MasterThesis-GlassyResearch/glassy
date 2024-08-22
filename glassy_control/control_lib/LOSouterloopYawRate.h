@@ -10,6 +10,7 @@
 #include <cmath>
 #include <rclcpp/rclcpp.hpp>
 #include <glassy_utils/GlassyGeneralUtils.h>
+#include <glassy_msgs/msg/state.hpp>
 
 
 class LOSouterloopYawRate
@@ -42,7 +43,7 @@ public:
     LOSouterloopYawRate(float k1, float k2) : k1_(k1), k2_(k2){references.push_back(0.0); references.push_back(0.0);};
     LOSouterloopYawRate(){};
     ~LOSouterloopYawRate(){};
-    std::vector<float> computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose, float yaw,float tangent_heading, float signed_curvature, float speed, float duration);
+    std::vector<float> computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration);
 
 
     bool set_params(float k1, float k2){

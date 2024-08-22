@@ -5,9 +5,11 @@ float64[2] path_deriv
 float64[2] path_secnd_deriv
 
 float64 path_vel
+float64 gamma_vd
 float64 tangent_heading
 float64 curvature
 float64 curvature_deriv
+
 
 
 int64 is_set

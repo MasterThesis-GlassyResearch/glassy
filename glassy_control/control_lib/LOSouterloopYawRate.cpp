@@ -8,9 +8,16 @@
     // float k1 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k1").as_double();
     // float k2 = this->pathfollowing_node->get_parameter("LOS_yr_gains.k2").as_double();
 
-std::vector<float> LOSouterloopYawRate::computeOutput(Eigen::Vector2d pose_ref, Eigen::Vector2d pose, float yaw,float tangent_heading, float signed_curvature, float speed, float duration){
+std::vector<float> LOSouterloopYawRate::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
 
     (void) duration;    
+    Eigen::Vector2d pose;
+    pose << state->p_ned[0], state->p_ned[1];
+
+    float tangent_heading = atan2(p_deriv(1), p_deriv(0));
+    float signed_curvature = (p_deriv(0)*p_2nd_deriv(1) - p_deriv(1)*p_2nd_deriv(0))/pow(p_deriv.norm(), 3);
+
+    float yaw = state->yaw;
 
     Eigen::Matrix2d rot;
     rot << cos(tangent_heading), sin(tangent_heading),
