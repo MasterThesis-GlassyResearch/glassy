@@ -172,6 +172,8 @@ void PathManagementNode::ref_publish()
     this->pathref_msg.curvature = this->path_segments[this->path_index]->getCurvature(0.0);
     Eigen::Vector2d path_dot(cos(this->pathref_msg.tangent_heading), sin(this->pathref_msg.tangent_heading));
 
+    //Eigen::Vector2d path_dot = this->path_segments[this->path_index]->getPathDerivative(gamma);
+
     // Eigen::Vector2d path_dot_dot = this->path_segments[this->path_index]->getPathSecondDerivative(0.0);
 
     this->pathref_msg.path_deriv[0] = path_dot(0);

@@ -48,26 +48,12 @@ void PathFollowingNode::runController(){
     this->inner_loop_ref_msg.yaw_rate_ref = 0.0;
 
     if(this->controller_type=="LOS"){
-        // compute the output of the LOS controller (surge, yaw, yaw_rate)
-        this->speed = 2.0;
         this->LOSPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
-        // this->inner_loop_ref_msg.surge_ref= this->surge_ref;
-        // this->inner_loop_ref_msg.yaw_ref= res_los[1];
-        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW;
     } else if(this->controller_type=="LOS-r"){
+        this->LOSPathFollowingYawRate.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
 
-        // compute the output of the LOS controller (surge, yaw, yaw_rate)
-        // std::vector<float> res_los_yr = this->LOSPathFollowingYawRate.computeOutput(this->pose_ref, this->pose,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
-        // // load the message
-        // RCLCPP_INFO(this->pathfollowing_node->get_logger(), "Yaw Rate ref: %f", res_los_yr[1]);
-        
-        // this->inner_loop_ref_msg.surge_ref= this->surge_ref;
-        // this->inner_loop_ref_msg.yaw_ref= 0.0;
-        // this->inner_loop_ref_msg.yaw_rate_ref = res_los_yr[1];
-        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
     } else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
-        // this->inner_loop_ref_msg.ctrl_type = InnerLoopReferences::SURGE_YAW_RATE;
     }
 
     this->inner_loop_ref_msg.header.stamp = this->pathfollowing_node->get_clock()->now();
@@ -93,6 +79,8 @@ void PathFollowingNode::path_subscription_callback(const glassy_msgs::msg::PathR
     this->p_deriv = Eigen::Vector2d(msg->path_deriv[0], msg->path_deriv[1]);
     this->p_2nd_deriv = Eigen::Vector2d(msg->path_secnd_deriv[0], msg->path_secnd_deriv[1]);
     this->pose_ref = Eigen::Vector2d(msg->pose_ref[0], msg->pose_ref[1]);
+
+    this->speed = msg->path_vel;
 
 }
 
@@ -123,7 +111,12 @@ void PathFollowingNode::mission_info_subscription_callback(const glassy_msgs::ms
     }
 }
 
-
+/**
+ * @brief Callback function for the set LOS parameters service
+ *
+ * @param request 
+ * @param response 
+ */
 void PathFollowingNode::setLOSParams_callback(const std::shared_ptr<glassy_msgs::srv::LosParams::Request> request, std::shared_ptr<glassy_msgs::srv::LosParams::Response> response){
 
     float look_ahead = request->look_ahead_dist;
@@ -132,14 +125,25 @@ void PathFollowingNode::setLOSParams_callback(const std::shared_ptr<glassy_msgs:
     response->result = this->LOSPathFollowing.set_params(look_ahead, sigma);
 }
 
-
+/**
+ * @brief Activate the inner loop
+ *
+ */
 void PathFollowingNode::activate(){
     this->is_active=true;
     this->LOSPathFollowing.reset_integrator();
+    this->LOSPathFollowingYawRate.reset_integrator();
+    this->VanniPathFollowing.reset();
 }
+
+/**
+ * @brief Deactivate the inner loop
+ *
+ */
 void PathFollowingNode::deactivate(){
     this->is_active=false;
     this->LOSPathFollowing.reset_integrator();
+    this->LOSPathFollowingYawRate.reset_integrator();
 }
 
 
@@ -188,10 +192,12 @@ void PathFollowingNode::init(){
     // prepare the LOS controller
     if(this->controller_type=="LOS"){
         this->LOSPathFollowing = LOSouterloop(this->pathfollowing_node, this->reference_publisher);
-    }else if(this->controller_type=="LOS-r")
+    }
+    else if(this->controller_type=="LOS-r")
     {
-        // this->LOSPathFollowingYawRate = LOSouterloopYawRate(k1, k2);
-    } else if(this->controller_type=="Vanni"){
+        this->LOSPathFollowingYawRate = LOSouterloopYawRate(this->pathfollowing_node, this->reference_publisher);
+    }
+    else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing = VanniOuterLoop(this->pathfollowing_node, this->reference_publisher, this->gamma_publisher);
     }
 

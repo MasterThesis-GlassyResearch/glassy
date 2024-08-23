@@ -63,7 +63,7 @@ void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eig
     }
 
 
-    float desired_const_speed = 1.0;
+    float desired_const_speed = 0;
 
     std::cout<<"p_deriv: "<<p_deriv(0)<<" "<<p_deriv(1)<<std::endl;
     if(p_deriv.norm() < 0.000000001){

@@ -9,5 +9,6 @@ int32 STRAIGHT_INFO_SIZE=4
 
 int32[] path_segments
 float64[] path_segment_info
+float64[] desired_path_velocity_per_segment
 bool loop false
 bool path_recalculated
