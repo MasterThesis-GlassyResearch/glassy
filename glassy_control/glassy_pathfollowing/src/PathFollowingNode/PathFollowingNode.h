@@ -11,12 +11,14 @@
 #include "../control_lib/LOSouterloop.h"
 #include "../control_lib/LOSouterloopYawRate.h"
 #include "../control_lib/VanniOuterLoop.h"
+#include "../control_lib/VanniIntegrated.h"
 
 #include "MissionTypesOuterLoop.h"
 #include "glassy_msgs/msg/inner_loop_references.hpp"
 #include "glassy_msgs/msg/path_references.hpp"
 #include "glassy_msgs/srv/los_params.hpp"
 #include "glassy_msgs/msg/state.hpp"
+#include "glassy_msgs/msg/actuators.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "glassy_msgs/msg/mission_info.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -32,6 +34,7 @@ private:
     LOSouterloop LOSPathFollowing;
     LOSouterloopYawRate LOSPathFollowingYawRate;
     VanniOuterLoop VanniPathFollowing;
+    VanniIntegrated VanniIntegratedPF;
 
     Eigen::Vector2d pose;
     Eigen::Vector2d pose_ref;
@@ -77,6 +80,9 @@ public:
 
     // Publishers ROS2
     rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr reference_publisher;
+
+    // publisher for actuator values
+    rclcpp::Publisher<glassy_msgs::msg::Actuators>::SharedPtr actuator_publisher;
 
     // gamma parameter publisher in case of a virtual target path following
     rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_publisher;

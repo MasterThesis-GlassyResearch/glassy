@@ -18,6 +18,7 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package (Eigen3 3.3 REQUIRED)
+find_package(glassy_msgs REQUIRED)
 
 
 # let the compiler search for headers in the include folder
@@ -25,15 +26,20 @@ include_directories(include)
  
 # define a library target called my_value_converter_library
 add_library(GlassyGeneralUtils src/GlassyGeneralUtils.cpp)
+add_library(GlassyDynamics src/GlassyDynamics.cpp)
  
 # this line to exports the library
 ament_export_targets(GlassyGeneralUtils HAS_LIBRARY_TARGET)
+ament_export_targets(GlassyDynamics HAS_LIBRARY_TARGET)
  
 # install the include/my_cpp_library directory to the install/include/my_cpp_library
 install(
   DIRECTORY include/glassy_utils
   DESTINATION include
 )
+
+ament_target_dependencies(GlassyDynamics glassy_msgs Eigen3)
+
  
 install(
   TARGETS GlassyGeneralUtils
@@ -44,6 +50,14 @@ install(
   INCLUDES DESTINATION include
 )
 
+install(
+  TARGETS GlassyDynamics
+  EXPORT GlassyDynamics
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

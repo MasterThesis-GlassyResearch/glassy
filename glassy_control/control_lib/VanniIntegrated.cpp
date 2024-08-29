@@ -1,18 +1,17 @@
-#include "./VanniOuterLoop.h"
+#include "./VanniIntegrated.h"
 #include <rclcpp/rclcpp.hpp>
 
 
-VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::InnerLoopReferences>::SharedPtr inner_loop_ref_pub, rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_pub){
+VanniIntegrated::VanniIntegrated(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::Actuators>::SharedPtr actuator_publisher, rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_pub){
 
     // get parameters from the node
     nd->declare_parameter("Vanni_gains.k1", 1.0);
     nd->declare_parameter("Vanni_gains.k2", 1.0);
     nd->declare_parameter("Vanni_gains.gamma", 0.0);
 
-    clock = nd->get_clock();
     node_ptr_ = nd;
 
-    this->ref_publisher = inner_loop_ref_pub;
+    this->ref_publisher = actuator_publisher;
     this->gamma_publisher = gamma_pub;
 
     this->gamma_msg_.data = 0.0;
@@ -20,11 +19,12 @@ VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publish
     this->references.push_back(0.0);
     this->references.push_back(0.0);
 
-    this->inner_loop_ref_msg.ctrl_type = glassy_msgs::msg::InnerLoopReferences::SURGE_YAW_RATE;
 
     gamma_ = 0.0;
     gamma_dot_ = 0.0;
     gamma_dot_dot_ = 0.0;
+
+    integral_vec_<< 0.0, 0.0;
 }
 
 
@@ -38,7 +38,7 @@ VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publish
 //   d: [-5.0, 5.0, 0.0]
 
 // in this case, speed will be vd
-void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
     // for now ignore all parameters
     (void) p_2nd_deriv;
     (void) speed;
@@ -149,21 +149,76 @@ void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eig
     std::cout<<"gamma_d_err: "<<gamma_d_err<<std::endl;
     std::cout<<"time dt: "<<dt<<std::endl;
 
-    // update the msgs and then publish
-    inner_loop_ref_msg.surge_ref = refs(0);
-    inner_loop_ref_msg.yaw_rate_ref = refs(1);
-    inner_loop_ref_msg.ctrl_type = glassy_msgs::msg::InnerLoopReferences::SURGE_YAW_RATE;
+    // get the ideal inputs, and then use it to compute the real input 
+    float u_star = refs(0);
+    float r_star = refs(1);
+
+
+    // calculate the derivative of the ideal inpts 
+    float u_dot_star = (u_star - prev_u_star_)/dt;
+    float r_dot_star = (r_star - prev_r_star_)/dt;
+
+
+    // get the velocities in body frame
+    float u = state->v_body[0];
+
+    // get the rates
+    float r = state->yaw_rate;
+
+    float error_u = u - u_star;
+    float error_r = r - r_star;
+
+
+    Eigen::Vector2d error_vec(error_u, error_r);
+    Eigen::Vector2d ref_vec(u_dot_star, r_dot_star);
+    Eigen::Vector2d ref_star_dot(u_dot_star, r_dot_star);
+
+
+
+    float kp_u_ = 5;
+    float kp_r_ = 5;
+    Eigen::Matrix2d proportional_mat;
+    proportional_mat<< kp_u_, 0,
+                        0, kp_r_;
+
+    Eigen::Matrix2d integral_mat;
+    integral_mat<< 0.1, 0.0,
+                    0.0, 0.1;
+    
+    integral_vec_ = integral_vec_ + error_vec*dt;
+
+
+    Eigen::Vector2d desired_accelerations = ref_star_dot - (error_vec/error_vec.norm())*(-p_err.transpose()*delta_mat*error_vec )- proportional_mat*error_vec - integral_mat*integral_vec_; 
+
+
+    // print the desired accelerations for debbugging 
+    // RCLCCP_IN
+
+
+    // get the actuator values
+    Eigen::Vector2d actuator_values = getActuatorsFromDesiredAccelerations(desired_accelerations(0), desired_accelerations(1), state);
+
+
+    // update the previous values
+    prev_u_star_ = u_star;
+    prev_r_star_ = r_star;
+
+    actuator_msg.thrust = actuator_values(0);
+    actuator_msg.rudder = actuator_values(1);
+
+    actuator_msg.header.stamp = node_ptr_->get_clock()->now();
+
 
     gamma_msg_.data = gamma_;
 
-    this->ref_publisher->publish(inner_loop_ref_msg);
+    this->ref_publisher->publish(actuator_msg);
     this->gamma_publisher->publish(gamma_msg_);
 
 
 }
 
-void VanniOuterLoop::reset(){
-    std::cout<<"Resetting the VanniOuterLoop"<<std::endl;
+void VanniIntegrated::reset(){
+    std::cout<<"Resetting the VanniIntegrated"<<std::endl;
     gamma_ = 0.0;
     is_on_ = false;
 }

@@ -54,6 +54,8 @@ void PathFollowingNode::runController(){
 
     } else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+    } else if(this->controller_type=="VanniIntegrated"){
+        this->VanniIntegratedPF.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
     }
 
     this->inner_loop_ref_msg.header.stamp = this->pathfollowing_node->get_clock()->now();
@@ -187,6 +189,7 @@ void PathFollowingNode::init(){
     // initialize publisher
     this->reference_publisher = this->pathfollowing_node->create_publisher<glassy_msgs::msg::InnerLoopReferences>("/glassy/innerloop_refs", 1);
     this->gamma_publisher = this->pathfollowing_node->create_publisher<std_msgs::msg::Float64>("/glassy/gamma", 1);
+    this->actuator_publisher = this->pathfollowing_node->create_publisher<glassy_msgs::msg::Actuators>("/glassy/actuators", 1);
 
 
     // prepare the LOS controller
@@ -199,6 +202,8 @@ void PathFollowingNode::init(){
     }
     else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing = VanniOuterLoop(this->pathfollowing_node, this->reference_publisher, this->gamma_publisher);
+    } else if(this->controller_type=="VanniIntegrated"){
+        this->VanniIntegratedPF = VanniIntegrated(this->pathfollowing_node, this->actuator_publisher, this->gamma_publisher);
     }
 
 
