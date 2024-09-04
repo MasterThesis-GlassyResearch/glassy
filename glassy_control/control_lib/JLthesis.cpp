@@ -1,13 +1,32 @@
-#include "./VanniIntegrated.h"
+#include "./JLthesis.h"
 #include <rclcpp/rclcpp.hpp>
 
 
-VanniIntegrated::VanniIntegrated(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::Actuators>::SharedPtr actuator_publisher, rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_pub){
+JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_msgs::msg::Actuators>::SharedPtr actuator_publisher, rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr gamma_pub){
 
     // get parameters from the node
-    nd->declare_parameter("Vanni_gains.k1", 1.0);
-    nd->declare_parameter("Vanni_gains.k2", 1.0);
-    nd->declare_parameter("Vanni_gains.gamma", 0.0);
+    nd->declare_parameter("JLIntegrated_params.k1", 1.0);
+    nd->declare_parameter("JLIntegrated_params.k2", 1.0);
+    nd->declare_parameter("JLIntegrated_params.delta", -0.1);
+    nd->declare_parameter("JLIntegrated_params.k_gamma", 1.0);
+
+
+
+    k1_ = nd->get_parameter("JLIntegrated_params.k1").as_double();
+    k2_ = nd->get_parameter("JLIntegrated_params.k2").as_double();
+    float delta_ = nd->get_parameter("JLIntegrated_params.delta").as_double();
+
+
+    delta_mat_<< 1, 0,
+                0, -delta_;
+
+    delta_mat_inv_<< 1, 0,
+                    0, -1/delta_;
+
+    K_mat_<< k1_, 0,
+            0, k2_;
+
+    
 
     node_ptr_ = nd;
 
@@ -38,7 +57,7 @@ VanniIntegrated::VanniIntegrated(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publi
 //   d: [-5.0, 5.0, 0.0]
 
 // in this case, speed will be vd
-void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
+void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
     // for now ignore all parameters
     (void) p_2nd_deriv;
     (void) speed;
@@ -63,7 +82,7 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
     }
 
 
-    float desired_const_speed = 1;
+    float desired_const_speed = 4;
 
     std::cout<<"p_deriv: "<<p_deriv(0)<<" "<<p_deriv(1)<<std::endl;
     if(p_deriv.norm() < 0.000000001){
@@ -73,9 +92,6 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
         return;
     }
     float vd = desired_const_speed/p_deriv.norm();
-    // for testing 
-    k1_ = 2.0;
-    k2_ = 2.0;
 
     float dt = duration;
 
@@ -87,29 +103,29 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
     
 
 
-    float delta = -1.0;
-    Eigen::Matrix2d delta_mat;
-    delta_mat<< 1, 0,
-                0, -delta;
+    // float delta = -0.01;
+    // Eigen::Matrix2d delta_mat;
+    // delta_mat<< 1, 0,
+    //             0, -delta;
 
-    Eigen::Matrix2d delta_mat_inv;
-    delta_mat_inv<< 1, 0,
-                    0, -1/delta;
+    // Eigen::Matrix2d delta_mat_inv;
+    // delta_mat_inv<< 1, 0,
+    //                 0, -1/delta;
 
-    Eigen::Vector2d delta_vec( delta, 0.0);
+    // Eigen::Vector2d delta_vec( delta, 0.0);
 
-    Eigen::Matrix2d K_mat;
-    K_mat<< k1_, 0,
-            0, k2_;
+    // Eigen::Matrix2d K_mat;
+    // K_mat<< k1_, 0,
+    //         0, k2_;
 
     // get the error in body coordinates
     Eigen::Vector2d pose(state->p_ned[0], state->p_ned[1]);
-    Eigen::Vector2d p_err = rot_I_to_B*(pose- pose_ref) - delta_vec;
+    Eigen::Vector2d p_err = rot_I_to_B*(pose- pose_ref) - delta_vec_;
 
     // float vd = speed;
     Eigen::Vector2d tanh_pos_err(tanh(p_err(0)), tanh(p_err(1)));
     
-    Eigen::Vector2d refs = delta_mat_inv*(-K_mat*tanh_pos_err- Eigen::Vector2d(0.0, state->v_body[1]) + rot_I_to_B*p_deriv*vd);
+    Eigen::Vector2d refs = delta_mat_inv_*(-K_mat_*tanh_pos_err- Eigen::Vector2d(0.0, state->v_body[1]) + rot_I_to_B*p_deriv*vd);
 
 
     float k_gamma = 1.0;
@@ -177,9 +193,8 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
 
     float kp_u_ = 5;
     float kp_r_ = 5;
-    Eigen::Matrix2d proportional_mat;
-    proportional_mat<< kp_u_, 0,
-                        0, kp_r_;
+    Kp_<< kp_u_, 0,
+        0, kp_r_;
 
     Eigen::Matrix2d integral_mat;
     integral_mat<< 0.1, 0.0,
@@ -188,7 +203,7 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
     integral_vec_ = integral_vec_ + error_vec*dt;
 
 
-    Eigen::Vector2d desired_accelerations = ref_star_dot - (error_vec/error_vec.norm())*(-p_err.transpose()*delta_mat*error_vec )- proportional_mat*error_vec - integral_mat*integral_vec_; 
+    Eigen::Vector2d desired_accelerations = ref_star_dot - (error_vec/error_vec.norm())*(-p_err.transpose()*delta_mat_*error_vec )- Kp_*error_vec - integral_mat*integral_vec_; 
 
 
     // print the desired accelerations for debbugging 
@@ -217,8 +232,8 @@ void VanniIntegrated::computeOutput(glassy_msgs::msg::State::SharedPtr state, Ei
 
 }
 
-void VanniIntegrated::reset(){
-    std::cout<<"Resetting the VanniIntegrated"<<std::endl;
+void JLthesis::reset(){
+    std::cout<<"Resetting the JLthesis"<<std::endl;
     gamma_ = 0.0;
     is_on_ = false;
 }

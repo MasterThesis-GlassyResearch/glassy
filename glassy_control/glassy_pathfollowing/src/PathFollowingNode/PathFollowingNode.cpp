@@ -54,8 +54,8 @@ void PathFollowingNode::runController(){
 
     } else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
-    } else if(this->controller_type=="VanniIntegrated"){
-        this->VanniIntegratedPF.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
+    } else if(this->controller_type=="JLthesis"){
+        this->JLthesisPF.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
     }
 
     this->inner_loop_ref_msg.header.stamp = this->pathfollowing_node->get_clock()->now();
@@ -202,8 +202,8 @@ void PathFollowingNode::init(){
     }
     else if(this->controller_type=="Vanni"){
         this->VanniPathFollowing = VanniOuterLoop(this->pathfollowing_node, this->reference_publisher, this->gamma_publisher);
-    } else if(this->controller_type=="VanniIntegrated"){
-        this->VanniIntegratedPF = VanniIntegrated(this->pathfollowing_node, this->actuator_publisher, this->gamma_publisher);
+    } else if(this->controller_type=="JLIntegrated"){
+        this->JLthesisPF = JLthesis(this->pathfollowing_node, this->actuator_publisher, this->gamma_publisher);
     }
 
 

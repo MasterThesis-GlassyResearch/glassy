@@ -11,7 +11,7 @@
 #include "../control_lib/LOSouterloop.h"
 #include "../control_lib/LOSouterloopYawRate.h"
 #include "../control_lib/VanniOuterLoop.h"
-#include "../control_lib/VanniIntegrated.h"
+#include "../control_lib/JLthesis.h"
 
 #include "MissionTypesOuterLoop.h"
 #include "glassy_msgs/msg/inner_loop_references.hpp"
@@ -34,7 +34,7 @@ private:
     LOSouterloop LOSPathFollowing;
     LOSouterloopYawRate LOSPathFollowingYawRate;
     VanniOuterLoop VanniPathFollowing;
-    VanniIntegrated VanniIntegratedPF;
+    JLthesis JLthesisPF;
 
     Eigen::Vector2d pose;
     Eigen::Vector2d pose_ref;
