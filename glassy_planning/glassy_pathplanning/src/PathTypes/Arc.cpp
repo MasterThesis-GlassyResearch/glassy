@@ -135,9 +135,6 @@ Eigen::Vector2d Arc::getPathDerivative(float gamma){
 
     Eigen::Vector2d path_deriv(this->radius * angle_scale*-sin(angle), this->radius * angle_scale* cos(angle));
 
-
-    std::cout<<"Path deriv: "<<path_deriv<<std::endl;
-    std::cout<<"calculating path deriv"<<std::endl;
     return path_deriv;
 };
 

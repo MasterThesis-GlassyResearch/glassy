@@ -213,7 +213,8 @@ void PathManagementNode::ref_publish()
  */
 bool PathManagementNode::correct_home_position()
 {
-    if (!this->lat)
+
+    if (std::isnan(this->lat))
     {
         std::cout << "no state available..." << std::endl;
         return false;
@@ -267,7 +268,7 @@ void PathManagementNode::state_subscription_callback(const glassy_msgs::msg::Sta
 
 void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float64::SharedPtr msg)
 {   
-    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Gamma callback with gamma = %f", msg->data);
+    RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Gamma callback with gamma = %f", msg->data);
     if(!this->path_is_set){
         this->pathref_msg.is_set = 0;
         this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
@@ -279,19 +280,27 @@ void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float6
 
     float gamma = std::max(0.0, msg->data);
     this->path_index = floor(msg->data);
-    gamma = gamma - this->path_index;
 
-    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Gamma: %f", gamma);
-    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path Index: %d", this->path_index);
-    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Msg Data: %f", msg->data);
+    RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Gamma: %f", gamma);
+    RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Path Index: %d", this->path_index);
+    RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Msg Data: %f", msg->data);
+
+    gamma = gamma - floor(gamma);
 
     // handle the case where the path index is greater than the size of the path
     // either stop the path, or loop the path
-    if(msg->data>size(this->path_segments)){
+    if(msg->data>=size(this->path_segments)){
         if(this->loop){
-            this->path_index = this->path_index % size(this->path_segments);
-            gamma = gamma - floor(this->path_index/size(this->path_segments));
+            // this->path_index = this->path_index % size(this->path_segments) + initial_segs_to_skip;
+            this->path_index = (this->path_index - initial_segs_to_skip)%(size(this->path_segments)- initial_segs_to_skip) + initial_segs_to_skip;
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "IN LOOPING...");
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "path index is: %d", this->path_index);
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "initial segs to skip is: %d", this->initial_segs_to_skip);
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "size of path segments is: %d", size(this->path_segments));
+
         } else{
+            RCLCPP_INFO(this->pathmanagement_node->get_logger(), "loop varibale is: %d", this->loop);
+            std::cout << "NOT LOOPING..." << std::endl;
             this->pathref_msg.is_set = false;
             this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
             this->pathref_msg.path_vel = 0.0;
@@ -306,7 +315,7 @@ void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float6
 
     // fill in the path msg 
     Eigen::Vector2d point = this->path_segments[this->path_index]->getPoint(gamma);
-    RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Point: %f %f", point(0), point(1));
+    RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Point: %f %f", point(0), point(1));
     this->pathref_msg.pose_ref[0] = point(0);
     this->pathref_msg.pose_ref[1] = point(1);
 
@@ -325,7 +334,7 @@ void PathManagementNode::gamma_subscription_callback(const std_msgs::msg::Float6
     this->pathref_msg.tangent_heading = atan2(path_dot(1), path_dot(0));
     this->pathref_msg.is_set = 1;
     this->pathref_msg.header.stamp = this->pathmanagement_node->get_clock()->now(); 
-    this->pathref_msg.path_vel = 3.0;
+    this->pathref_msg.path_vel = this->requested_surge[this->path_index];
     this->pathref_msg.path_segment_index = this->path_index;
 
     // publish the message
@@ -367,7 +376,7 @@ void PathManagementNode::path_info_subscription_callback(const glassy_msgs::msg:
 
     if (this->path_is_set && msg->path_recalculated)
     {
-        RCLCPP_INFO(this->pathmanagement_node->get_logger(), "Path NOT Recalculated");
+        RCLCPP_DEBUG(this->pathmanagement_node->get_logger(), "Path NOT Recalculated");
         return;
     }
     this->requested_surge.clear();
@@ -394,10 +403,15 @@ void PathManagementNode::path_info_subscription_callback(const glassy_msgs::msg:
                                     msg->path_segment_info[j + 3] + this->y_correction))));
             j = j + msg->STRAIGHT_INFO_SIZE;
         }
+        this->requested_surge.push_back(msg->desired_path_velocity_per_segment[i]);
+
     }
     this->path_index = 0;
     this->path_segments[this->path_index]->activate();
     this->path_is_set = true;
+    this->initial_segs_to_skip = msg->path_segs_to_ignore_in_loop;
+    std::cout << "Loop msg is : " << msg->loop << std::endl;
+    this->loop = msg->loop;
 }
 
 /*----------------------------------
@@ -493,8 +507,6 @@ void PathManagementNode::init()
         ROS2 Service Initialization
     -------------------------------*/
     if(get_closest_point){
-        // subscribe to state topic
-        this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
         // initialize timer, -> dictates when to publish
         this->timer = this->pathmanagement_node->create_wall_timer(1s/this->rate, std::bind(&PathManagementNode::ref_publish, this));
         this->use_timer=true;
@@ -502,6 +514,8 @@ void PathManagementNode::init()
         // subscribe to gamma topic
         this->gamma_subscription = this->pathmanagement_node->create_subscription<std_msgs::msg::Float64>("/glassy/gamma", 1, std::bind(&PathManagementNode::gamma_subscription_callback, this, _1));
     }
+    // subscribe to state topic
+    this->state_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::State>("/glassy/state", 1, std::bind(&PathManagementNode::state_subscription_callback, this, _1));
     // subscribe to the mission info
     this->mission_info_subscription = this->pathmanagement_node->create_subscription<glassy_msgs::msg::MissionInfo>("/glassy/mission_status", 1, std::bind(&PathManagementNode::mission_info_subscription_callback, this, _1));
 

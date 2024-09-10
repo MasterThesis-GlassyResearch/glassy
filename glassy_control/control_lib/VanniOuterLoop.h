@@ -23,9 +23,13 @@ private:
 
     float k1_;
     float k2_;
+    float k_gamma_;
     float gamma_ = 0.0;
     float gamma_dot_ = 0.0;
     float gamma_dot_dot_ = 0.0;
+    float delta_;
+
+    bool traj_tracking_ = true;
 
     float prev_time_ = 0.0;
     bool is_on_=false;

@@ -12,3 +12,6 @@ float64[] path_segment_info
 float64[] desired_path_velocity_per_segment
 bool loop false
 bool path_recalculated
+int32 path_segs_to_ignore_in_loop 0
+float64 x_correction 0
+float64 y_correction 0

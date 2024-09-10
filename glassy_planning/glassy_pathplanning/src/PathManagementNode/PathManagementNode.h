@@ -39,8 +39,8 @@ private:
 
     bool path_is_set = false;
 
-    float lat = 0.0;
-    float lon = 0.0;
+    float lat = NAN;
+    float lon = NAN;
 
     // simulation mode
     bool is_simulation = true;
@@ -55,6 +55,7 @@ private:
 
     // if the path is a loop (if should restart)
     bool loop = false;
+    int initial_segs_to_skip = 0;
 
     // maximum and minimum surges that can be requested
     float max_surge = 12;

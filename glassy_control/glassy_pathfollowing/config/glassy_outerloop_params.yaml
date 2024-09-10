@@ -1,6 +1,6 @@
 /**:
   ros__parameters:
-    rate: 40.0
+    rate: 30.0
     controller_type: "JLIntegrated" # "LOS", "LOS-r", "JLIntegrated", "Vanni"
     LOS_gains:
       sigma: 0.1
@@ -8,21 +8,23 @@
       max_int: 1.0
 
     LOS_yr_gains:
-      k1: 3.0
-      k2: 3.0
+      k1: 0.3
+      k2: 0.3
 
     JLIntegrated_params:
-      k1: 2.0
-      k2: 2.0
-      kpu: 2
-      kpr: 2
-      kiu: 0.1
-      kir: 0.1
-      delta: -0.1
+      k1: 4.0
+      k2: 4.0
+      kp_u: 5.0
+      kp_r: 5.0
+      ki_u: 0.3
+      ki_r: 0.3
+      K_gamma: 1.0
+      delta: -0.8
+      trajtracking: true
 
     Vanni_params:
-      k1: 2.0
-      k2: 2.0
-      delta: -0.1
+      k1: 4.0
+      k2: 4.0
+      delta: -0.8
 
 

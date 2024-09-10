@@ -4,10 +4,10 @@
       path_defs:
         get_closest_point: false
         control_gamma: true
-        home_lat: 38.76632678156928 
-        home_lon: -9.09333050971414
+        home_lat: 38.76653405093283 
+        home_lon: -9.092987347490286
 
-      is_simulation: false
+      is_simulation: true
 
       folder_paths: "/home/joaolehodey/glassy_ws/src/glassy_planning/glassy_pathplanning/PathExamples/"
       rate: 10.0

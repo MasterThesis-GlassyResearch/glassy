@@ -7,7 +7,18 @@ VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publish
     // get parameters from the node
     nd->declare_parameter("Vanni_gains.k1", 1.0);
     nd->declare_parameter("Vanni_gains.k2", 1.0);
-    nd->declare_parameter("Vanni_gains.gamma", 0.0);
+    nd->declare_parameter("Vanni_gains.k_gamma", 0.0);
+    nd->declare_parameter("Vanni_gains.delta", -1.0);
+    nd->declare_parameter("Vanni_gains.trajtracking",  true);
+
+    k1_ = nd->get_parameter("Vanni_gains.k1").as_double();
+    k2_ = nd->get_parameter("Vanni_gains.k2").as_double();
+    k_gamma_ = nd->get_parameter("Vanni_gains.k_gamma").as_double();
+    delta_ = nd->get_parameter("Vanni_gains.delta").as_double();
+    traj_tracking_ = nd->get_parameter("Vanni_gains.trajtracking").as_bool();
+
+    
+
 
     clock = nd->get_clock();
     node_ptr_ = nd;
@@ -41,10 +52,9 @@ VanniOuterLoop::VanniOuterLoop(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publish
 void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
     // for now ignore all parameters
     (void) p_2nd_deriv;
-    (void) speed;
 
 
-
+    RCLCPP_INFO(node_ptr_->get_logger(), "VanniOuterLoop::computeOutput");
     // check if any of the necessary values is nan
     if(std::isnan(pose_ref(0)) || std::isnan(pose_ref(1)) || std::isnan(p_deriv(0)) || std::isnan(p_deriv(1))){
         std::cout<<"Nan values in the pose_ref or p_deriv"<<std::endl;
@@ -72,7 +82,7 @@ void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eig
         prev_time_ = node_ptr_->get_clock()->now().nanoseconds();
         return;
     }
-    float vd = desired_const_speed/p_deriv.norm();
+    float vd = speed/p_deriv.norm();
     // for testing 
     k1_ = 2.0;
     k2_ = 2.0;
@@ -121,17 +131,14 @@ void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eig
     gamma_dot_dot_ = -k_gamma*gamma_d_err + p_err.transpose()*rot_I_to_B*p_deriv;
 
 
-    if(gamma_dot_ < vd){
-        gamma_dot_dot_ = 0.005;
+    /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
+    if(traj_tracking_){
+        gamma_dot_ = vd;
+    } else{
+        gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
     }
-    else{
-        gamma_dot_dot_ = 0.0;
-    }
-    gamma_dot_dot_ = 0.0;
-    gamma_dot_ = vd;
 
-    // update gamma values
-    // gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
+    /*Update gamma, take care of case when gamma<0*/
     gamma_ = gamma_ + gamma_dot_*dt;
     if(gamma_ < 0.0){
         gamma_ = 0.0;

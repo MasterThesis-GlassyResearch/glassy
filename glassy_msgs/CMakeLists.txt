@@ -34,6 +34,7 @@ set(msg_files
   "msg/MissionInfo.msg"
   "msg/PathInfo.msg"
   "msg/GateWayPointInfo.msg"
+  "msg/PathFollowingDebug.msg"
   )
 
 set(srv_files

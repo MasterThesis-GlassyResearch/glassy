@@ -7,18 +7,57 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     // get parameters from the node
     nd->declare_parameter("JLIntegrated_params.k1", 1.0);
     nd->declare_parameter("JLIntegrated_params.k2", 1.0);
-    nd->declare_parameter("JLIntegrated_params.delta", -0.1);
+    nd->declare_parameter("JLIntegrated_params.delta", -0.5);
     nd->declare_parameter("JLIntegrated_params.k_gamma", 1.0);
+    nd->declare_parameter("JLIntegrated_params.kp_u", 1.0);
+    nd->declare_parameter("JLIntegrated_params.kp_r", 1.0);
+
+    nd->declare_parameter("JLIntegrated_params.ki_u", 1.0);
+    nd->declare_parameter("JLIntegrated_params.ki_r", 1.0);
+
+    nd->declare_parameter("JLIntegrated_params.ku_param_update",  std::vector<int>({1, 2}));
+    nd->declare_parameter("JLIntegrated_params.kr_param_update",  std::vector<int>({1, 2}));
+
+    nd->declare_parameter("JLIntegrated_params.trajtracking",  true);
 
 
 
     k1_ = nd->get_parameter("JLIntegrated_params.k1").as_double();
     k2_ = nd->get_parameter("JLIntegrated_params.k2").as_double();
+    k_gamma_ = nd->get_parameter("JLIntegrated_params.k_gamma").as_double();
     float delta_ = nd->get_parameter("JLIntegrated_params.delta").as_double();
 
+    kp_u_ = nd->get_parameter("JLIntegrated_params.kp_u").as_double();
+    kp_r_ = nd->get_parameter("JLIntegrated_params.kp_r").as_double();
 
+    ki_u_ = nd->get_parameter("JLIntegrated_params.ki_u").as_double();
+    ki_r_ = nd->get_parameter("JLIntegrated_params.ki_r").as_double();
+
+    traj_tracking_ = nd->get_parameter("JLIntegrated_params.trajtracking").as_bool();
+
+    // rclcpp info all the parameters for debugging purposes
+    RCLCPP_INFO(nd->get_logger(), "USING JL Integrated CONTROLLER");
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.k1: %f", k1_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.k2: %f", k2_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.delta: %f", delta_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.k_gamma: %f", k_gamma_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.kp_u: %f", kp_u_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.kp_r: %f", kp_r_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_u: %f", ki_u_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_r: %f", ki_r_);
+
+
+
+    debug_publisher = nd->create_publisher<glassy_msgs::msg::PathFollowingDebug>("path_following_debug", 1); 
+
+
+
+
+    /* Insert the values into the corresponding matrices and vectors*/
     delta_mat_<< 1, 0,
                 0, -delta_;
+
+    delta_vec_<< delta_, 0.0;
 
     delta_mat_inv_<< 1, 0,
                     0, -1/delta_;
@@ -26,7 +65,26 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     K_mat_<< k1_, 0,
             0, k2_;
 
-    
+    Kp_<< kp_u_, 0,
+            0, kp_r_;
+
+    Ki_<< ki_u_, 0,
+            0, ki_r_;
+
+    //TODO: check this derivative term and if it helps
+    Kd_<< 0.1, 0,
+          0, 0.1;
+
+
+    K_drag_est_ = Eigen::MatrixXd(10, 10);
+
+
+
+
+    params_estimate = Eigen::VectorXd(10);
+    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
+
+                
 
     node_ptr_ = nd;
 
@@ -47,21 +105,20 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
 }
 
 
-//   delta: -1.0
-//   kx: 0.5
-//   ky: 0.5
-//   kz: 0.5
-//   k_pos: 2.0
-//   k_currents: 0.2
-//   rd: [0.0, 0.0, 1.0]
-//   d: [-5.0, 5.0, 0.0]
 
-// in this case, speed will be vd
+/**
+ * @brief compute the output of the controller
+ * 
+ * @param state the current state of the system
+ * @param pose_ref the reference pose
+ * @param p_deriv the derivative of the reference pose
+ * @param p_2nd_deriv the second derivative of the reference pose
+ * @param speed the speed of the vehicle
+ * @param duration the duration of the control
+ */
 void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration){
     // for now ignore all parameters
     (void) p_2nd_deriv;
-    (void) speed;
-
 
 
     // check if any of the necessary values is nan
@@ -82,16 +139,14 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     }
 
 
-    float desired_const_speed = 4;
 
-    std::cout<<"p_deriv: "<<p_deriv(0)<<" "<<p_deriv(1)<<std::endl;
     if(p_deriv.norm() < 0.000000001){
         std::cout<<"p_deriv is too small"<<std::endl;
         this->gamma_publisher->publish(gamma_msg_);
         prev_time_ = node_ptr_->get_clock()->now().nanoseconds();
         return;
     }
-    float vd = desired_const_speed/p_deriv.norm();
+    float vd = speed/p_deriv.norm();
 
     float dt = duration;
 
@@ -101,53 +156,30 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
     
-
-
-    // float delta = -0.01;
-    // Eigen::Matrix2d delta_mat;
-    // delta_mat<< 1, 0,
-    //             0, -delta;
-
-    // Eigen::Matrix2d delta_mat_inv;
-    // delta_mat_inv<< 1, 0,
-    //                 0, -1/delta;
-
-    // Eigen::Vector2d delta_vec( delta, 0.0);
-
-    // Eigen::Matrix2d K_mat;
-    // K_mat<< k1_, 0,
-    //         0, k2_;
-
-    // get the error in body coordinates
+    /* Get the pose in a vector and the error in body coordinates (delta already included)*/
     Eigen::Vector2d pose(state->p_ned[0], state->p_ned[1]);
     Eigen::Vector2d p_err = rot_I_to_B*(pose- pose_ref) - delta_vec_;
 
-    // float vd = speed;
+    /* Get the tanh of the error, this is used as saturation, not necessarily needed*/
     Eigen::Vector2d tanh_pos_err(tanh(p_err(0)), tanh(p_err(1)));
     
+    /* Get the references for the path following controller (see thesis Vanni)*/
     Eigen::Vector2d refs = delta_mat_inv_*(-K_mat_*tanh_pos_err- Eigen::Vector2d(0.0, state->v_body[1]) + rot_I_to_B*p_deriv*vd);
 
 
-    float k_gamma = 1.0;
-
-
-
+    /* Get the gamma_dot_dot_ value, this is the acceleration of the virtual target*/
     float gamma_d_err = gamma_dot_ - vd;
-    
-    gamma_dot_dot_ = -k_gamma*gamma_d_err + p_err.transpose()*rot_I_to_B*p_deriv;
+    gamma_dot_dot_ = -k_gamma_*gamma_d_err + p_err.transpose()*rot_I_to_B*p_deriv;
 
 
-    if(gamma_dot_ < vd){
-        gamma_dot_dot_ = 0.005;
+    /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
+    if(traj_tracking_){
+        gamma_dot_ = vd;
+    } else{
+        gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
     }
-    else{
-        gamma_dot_dot_ = 0.0;
-    }
-    gamma_dot_dot_ = 0.0;
-    gamma_dot_ = vd;
 
-    // update gamma values
-    // gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
+    /*Update gamma, take care of case when gamma<0*/
     gamma_ = gamma_ + gamma_dot_*dt;
     if(gamma_ < 0.0){
         gamma_ = 0.0;
@@ -155,85 +187,151 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
         gamma_dot_dot_ = 0.0;
     }
 
-    std::cout<<"refs: "<<refs(0)<<" "<<refs(1)<<std::endl;
-    std::cout<<"pose_ref: "<<pose_ref(0)<<" "<<pose_ref(1)<<std::endl;
-    std::cout<<"pose: "<<pose(0)<<" "<<pose(1)<<std::endl;
-    std::cout<<"yaw: "<<state->yaw<<std::endl;
-    std::cout<<"gamma: "<<gamma_<<std::endl;
-    std::cout<<"gamma_dot: "<<gamma_dot_<<std::endl;
-    std::cout<<"gamma_dot_dot: "<<gamma_dot_dot_<<std::endl;
-    std::cout<<"gamma_d_err: "<<gamma_d_err<<std::endl;
-    std::cout<<"time dt: "<<dt<<std::endl;
+    /* Print stuff, for debugging purposes */
+    // std::cout<<"refs: "<<refs(0)<<" "<<refs(1)<<std::endl;
+    // std::cout<<"pose_ref: "<<pose_ref(0)<<" "<<pose_ref(1)<<std::endl;
+    // std::cout<<"pose: "<<pose(0)<<" "<<pose(1)<<std::endl;
+    // std::cout<<"yaw: "<<state->yaw<<std::endl;
+    // std::cout<<"gamma: "<<gamma_<<std::endl;
+    // std::cout<<"gamma_dot: "<<gamma_dot_<<std::endl;
+    // std::cout<<"gamma_dot_dot: "<<gamma_dot_dot_<<std::endl;
+    // std::cout<<"gamma_d_err: "<<gamma_d_err<<std::endl;
+    // std::cout<<"time dt: "<<dt<<std::endl;
 
-    // get the ideal inputs, and then use it to compute the real input 
+    /* Get the 'ideal inputs'*/ 
     float u_star = refs(0);
     float r_star = refs(1);
 
 
-    // calculate the derivative of the ideal inpts 
+    /* calculate the derivative of the ideal inpts */ 
     float u_dot_star = (u_star - prev_u_star_)/dt;
     float r_dot_star = (r_star - prev_r_star_)/dt;
 
 
-    // get the velocities in body frame
+    /*Get the state info*/
     float u = state->v_body[0];
-
-    // get the rates
     float r = state->yaw_rate;
+    float v = state->v_body[1];
 
+    /*calculate the difference between the state and the ideal state*/
     float error_u = u - u_star;
     float error_r = r - r_star;
 
-
-    Eigen::Vector2d error_vec(error_u, error_r);
+    /* Insert the information into vectors for faster operations*/
+    Eigen::Vector2d tracking_err(error_u, error_r);
     Eigen::Vector2d ref_vec(u_dot_star, r_dot_star);
     Eigen::Vector2d ref_star_dot(u_dot_star, r_dot_star);
+    Eigen::Vector2d tracking_err_deriv(0.0, 0.0);
+
+    /* Calculate the derivative of the error*/
+    if(first_time_){
+        first_time_ = false;
+    }else{
+        tracking_err_deriv = (tracking_err - prev_tracking_err_)/dt;
+    }
+
+    /* Calculate the integral of the error*/
+    // check if integral is to be updated
+    if(integral_vec_(0) < integral_u_max_ && integral_vec_(0) > -integral_u_max_){
+        integral_vec_(0) = integral_vec_(0) + tracking_err(0)*dt;
+    }
+    if(integral_vec_(1) < integral_r_max_ && integral_vec_(1) > -integral_r_max_){
+        integral_vec_(1) = integral_vec_(1) + tracking_err(1)*dt;
+    }
 
 
 
-    float kp_u_ = 5;
-    float kp_r_ = 5;
-    Kp_<< kp_u_, 0,
-        0, kp_r_;
 
-    Eigen::Matrix2d integral_mat;
-    integral_mat<< 0.1, 0.0,
-                    0.0, 0.1;
+
+ 
+
+
     
-    integral_vec_ = integral_vec_ + error_vec*dt;
+    // Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(-p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - integral_mat*integral_vec_; 
+    Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - Ki_*integral_vec_ - Kd_*tracking_err_deriv ; 
+
+    // //test but should be equal to this:
+    // Eigen::Vector2d desired_accelerations = ref_star_dot - delta_mat_.transpose()*p_err - Kp_*tracking_err - Ki_*integral_vec_ - Kd_*tracking_err_deriv; 
 
 
-    Eigen::Vector2d desired_accelerations = ref_star_dot - (error_vec/error_vec.norm())*(-p_err.transpose()*delta_mat_*error_vec )- Kp_*error_vec - integral_mat*integral_vec_; 
+    DragDynamicsMatrix = Eigen::MatrixXd(2 , 10);
+    DragDynamicsMatrix << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];  
+
+    /* Update the parameters of the drag dynamics*/
+    params_estimate = params_estimate + 0.005*DragDynamicsMatrix.transpose()*tracking_err * dt;
 
 
-    // print the desired accelerations for debbugging 
-    // RCLCCP_IN
+    DragDynamicsMatrix = Eigen::MatrixXd(2 , 10);
+
+
+
+    
+    DragDynamicsMatrix << r*v, u, u*abs(u), u*abs(r), u*u*abs(r), 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0 ,v*u, r, r*abs(r), u*r, u*u;
+
+
+
+
+    float cancel_u_dot = DragDynamicsMatrix.row(0)*params_estimate;
+    float cancel_r_dot = DragDynamicsMatrix.row(1)*params_estimate;
 
 
     // get the actuator values
-    Eigen::Vector2d actuator_values = getActuatorsFromDesiredAccelerations(desired_accelerations(0), desired_accelerations(1), state);
+    Eigen::Vector2d actuator_values = getActuatorsFromDesiredAccelerations(desired_accelerations(0), desired_accelerations(1), state, cancel_u_dot, cancel_r_dot);
 
 
     // update the previous values
     prev_u_star_ = u_star;
     prev_r_star_ = r_star;
 
+
+    // previous tracking error
+    prev_tracking_err_ = tracking_err;
+
+    /*Update the actuator msg  and gamma msg fields and publish*/
     actuator_msg.thrust = actuator_values(0);
     actuator_msg.rudder = actuator_values(1);
-
     actuator_msg.header.stamp = node_ptr_->get_clock()->now();
-
-
     gamma_msg_.data = gamma_;
-
     this->ref_publisher->publish(actuator_msg);
     this->gamma_publisher->publish(gamma_msg_);
 
 
+    std::vector<double> surgeParamsDrag_estimated = {params_estimate(0), params_estimate(1), params_estimate(2), params_estimate(3), params_estimate(4), integral_vec_(0)};
+    std::vector<double> yawRateParamsDrag_estimated = {params_estimate(5), params_estimate(6), params_estimate(7), params_estimate(8), params_estimate(9), integral_vec_(1)};
+
+    /*fill in the debug msg*/
+    debug_msg.header.stamp = node_ptr_->get_clock()->now();
+    debug_msg.surge_drag_param_estimates = surgeParamsDrag_estimated;
+    debug_msg.yawrate_drag_param_estimates = yawRateParamsDrag_estimated;
+    debug_msg.u_star = u_star;
+    debug_msg.r_star = r_star;
+
+    debug_msg.u = u;
+    debug_msg.r = r;
+    debug_msg.u_err = error_u;
+    debug_msg.r_err = error_r;
+    debug_msg.p_err_x_body = p_err(0);
+    debug_msg.p_err_y_body = p_err(1);
+
+    /* publish debug msg*/
+    debug_publisher->publish(debug_msg);
+
 }
 
+/**
+ * @brief reset all the values of the controller
+ */
 void JLthesis::reset(){
     std::cout<<"Resetting the JLthesis"<<std::endl;
     gamma_ = 0.0;
     is_on_ = false;
+    first_time_ = true;
+    integral_vec_<< 0.0, 0.0;
+    if(params_estimate.rows() == 0 || params_estimate.cols() == 0){
+        return;
+    }
+    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
+
 }

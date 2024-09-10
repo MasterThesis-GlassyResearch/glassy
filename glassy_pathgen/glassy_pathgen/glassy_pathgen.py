@@ -10,7 +10,7 @@ import glassy_msgs.msg as glassy_msgs
 import glassy_pathgen.glassy_dubins as glassy_dubins
 import matplotlib.pyplot as plt
 import itertools
-
+import math
 
 # allowed libraries
 import numpy as np
@@ -39,8 +39,15 @@ class GlassyPathGen(Node):
         self.path_gen_method = self.get_parameter('glassy_pathgen.path_defs.path_type').get_parameter_value().string_value
         self.online_gen = self.get_parameter('glassy_pathgen.path_defs.online_gen').get_parameter_value().bool_value
         self.circuit = np.array(self.get_parameter('glassy_pathgen.waypoints').get_parameter_value().double_array_value).reshape(-1, 3)
+        self.ignore_start_loop = self.get_parameter('glassy_pathgen.path_defs.ignore_start_loop').get_parameter_value().bool_value
+        self.speed_of_straight_segments = self.get_parameter('glassy_pathgen.path_defs.speed_of_straight_segments').get_parameter_value().double_value
+        self.speed_of_turn_segments = self.get_parameter('glassy_pathgen.path_defs.speed_of_turn_segments').get_parameter_value().double_value
 
-        print(self.circuit)
+        self.home_lat = self.get_parameter('glassy_pathgen.home_lat').get_parameter_value().double_value
+        self.home_lon = self.get_parameter('glassy_pathgen.home_lon').get_parameter_value().double_value
+
+        self.loop = self.get_parameter('glassy_pathgen.path_defs.loop').get_parameter_value().bool_value
+
 
         
         # Log parameters:
@@ -49,8 +56,10 @@ class GlassyPathGen(Node):
         self.get_logger().info("Path Type: {}".format(self.path_gen_method))
         self.get_logger().info("Online Generation: {}".format(self.online_gen))
         self.get_logger().info("Circuit waypoints: {}".format(self.circuit))
+        self.get_logger().info("Loop: {}".format(self.loop))
 
-        self.is_active=True
+
+        self.is_active=False
         self.number_gates_in_advance = 2
 
         self.current_gate = 0
@@ -59,6 +68,13 @@ class GlassyPathGen(Node):
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
+        self.speed = 8.0
+        self.lat = math.nan
+        self.lon = math.nan
+
+        self.x_correction = 0.0
+        self.y_correction = 0.0
+        
 
         
         self.pathgen_dubins = glassy_dubins.DubinsGenerator(self.min_radius)
@@ -67,7 +83,9 @@ class GlassyPathGen(Node):
         self.path_msg = glassy_msgs.PathInfo() 
         self.path_msg.path_recalculated = False
 
+
         self.needs_to_be_calculated = True
+        self.needs_to_be_corrected = True
 
 
         #----------- Start timers
@@ -102,6 +120,10 @@ class GlassyPathGen(Node):
         self.y = msg.p_ned[1]
         self.yaw = msg.yaw
 
+        self.lat = msg.lat
+        self.lon = msg.lon
+
+
 
         if self.check_if_waypoint_crossed(np.array([prev_x, prev_y]), np.array([self.x, self.y])):
             if self.current_gate<len(self.circuit)-1:
@@ -109,7 +131,29 @@ class GlassyPathGen(Node):
             else:
                 self.current_gate=0
 
-        
+    
+    def correct_home_position(self):
+        print('correcting home position')
+
+        if(math.isnan(self.lat)):
+            self.get_logger().info('no state available...')
+            return False
+        R_earth = 6378.137 * 1000
+        lat_dif = np.pi/180 * (self.home_lat - self.lat)
+        lon_dif = np.pi/180 * (self.home_lon - self.lon)
+        self.x_correction = R_earth * lat_dif + self.x
+        self.y_correction = R_earth * lon_dif * np.cos(self.home_lat * np.pi/180) + self.y
+
+        self.path_msg.x_correction = self.x_correction
+        self.path_msg.y_correction = self.y_correction
+
+        self.get_logger().info('x_correction: {}'.format(self.x_correction))
+        self.get_logger().info('y_correction: {}'.format(self.y_correction))
+
+        for i in range(len(self.circuit)):
+            self.circuit[i][0] = self.circuit[i][0] + self.x_correction
+            self.circuit[i][1] = self.circuit[i][1] + self.y_correction
+        return True
 
     def check_if_waypoint_crossed(self, p1, p2):
         #first check orientation of gate compared to p2-p1
@@ -143,16 +187,26 @@ class GlassyPathGen(Node):
             if msg.mission_mode != glassy_msgs.MissionInfo.PATH_FOLLOWING:
                 self.timer.cancel()
                 self.is_active = False
+                self.needs_to_be_corrected = True
         else:
             if msg.mission_mode == glassy_msgs.MissionInfo.PATH_FOLLOWING:
+                self.needs_to_be_corrected = True
                 self.timer.reset()
                 self.is_active = True
+
+
 
 
     def PathGeneration(self):
         """
         Generate the path and publish the message
         """
+
+        if(self.needs_to_be_corrected):
+            if(self.correct_home_position()):
+                self.needs_to_be_corrected = False                
+            else:
+                return
 
         self.path_msg.header.stamp = self.get_clock().now().to_msg()
         if self.path_gen_method == "dubins":
@@ -162,14 +216,15 @@ class GlassyPathGen(Node):
                 self.needs_to_be_calculated = False
             elif(self.online_gen):
                 self.pathgen_dubins.DubinsInterpolator(np.vstack([np.array([self.x, self.y, self.yaw]), np.take(self.circuit, range(self.current_gate*3, self.current_gate*3+3*self.number_gates_in_advance), mode='wrap').reshape(2, 3)]))
-                self.get_logger().info('wrapping')
                 self.path_msg.path_recalculated = True
-
+            self.path_msg.desired_path_velocity_per_segment = [self.speed] * len(self.pathgen_dubins.full_path_type)
             self.path_msg.path_segments = self.pathgen_dubins.full_path_type
             self.path_msg.path_segment_info=list(np.concatenate(self.pathgen_dubins.full_path_info))
         else:
             self.path_msg.path_recalculated = False
-
+        if(self.ignore_start_loop):
+            self.path_msg.path_segs_to_ignore_in_loop = 3
+        self.path_msg.loop = self.loop
         self.path_info_publisher.publish(msg=self.path_msg)
 
 
