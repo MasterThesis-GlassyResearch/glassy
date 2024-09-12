@@ -60,6 +60,90 @@ class DubinsGenerator():
         ang = ang%(np.pi)
         return ang
     
+    
+    def simplify_path(self):
+        '''
+        If arcs in the same direction are found, they can be combined into one arc
+        '''
+
+        print("Simplifying path")
+        i = 0
+        j = 0
+        new_path_type = []
+        new_path_info = []
+        rigths_counter = 0
+        lefts_counter = 0
+        angle_sum = 0
+        while i<len(self.full_path_type):
+            #check if current path is arc, and whether it goes right or left
+            if(self.full_path_type[i]==PathInfo.ARC and self.full_path_info[j+2]>0):
+                if(lefts_counter>0):
+                    new_path_type.append(PathInfo.ARC)
+                    new_path_info.append(self.full_path_info[j-3*lefts_counter])
+                    new_path_info.append(self.full_path_info[j+1-3*lefts_counter])
+                    new_path_info.append(angle_sum)
+                    lefts_counter = 0
+                    angle_sum = 0
+
+                if(i==len(self.full_path_type)-1):
+                    new_path_type.append(self.full_path_type[i])
+                    new_path_info.append(self.full_path_info[j])
+                    new_path_info.append(self.full_path_info[j+1])
+                    new_path_info.append(self.full_path_info[j+2])
+                    break
+                #check if next path is arc, and whether it goes right or left
+                angle_sum = angle_sum+self.full_path_info[j+2]
+                rigths_counter = rigths_counter+1
+                j = j+3
+            elif(self.full_path_type[i]==PathInfo.ARC and self.full_path_info[j+2]<0):
+                if(rigths_counter>0):
+                    new_path_type.append(PathInfo.ARC)
+                    new_path_info.append(self.full_path_info[j-3*rigths_counter])
+                    new_path_info.append(self.full_path_info[j+1-3*rigths_counter]) 
+                    new_path_info.append(angle_sum)
+                    rigths_counter = 0
+                    angle_sum = 0
+
+                if(i==len(self.full_path_type)-1):
+                    new_path_type.append(PathInfo.ARC)
+                    new_path_info.append(self.full_path_info[j])
+                    new_path_info.append(self.full_path_info[j+1])
+                    new_path_info.append(self.full_path_info[j+2])
+                    break
+
+
+                lefts_counter = lefts_counter+1
+                angle_sum = angle_sum+self.full_path_info[j+2]
+                j = j+3
+            else:
+                if(rigths_counter>0):
+                    new_path_type.append(PathInfo.ARC)
+                    new_path_info.append(self.full_path_info[j-3*rigths_counter])
+                    new_path_info.append(self.full_path_info[j+1-3*rigths_counter])
+                    new_path_info.append(angle_sum)
+                    rigths_counter = 0  
+                    angle_sum = 0
+                elif(lefts_counter>0):
+                    new_path_type.append(PathInfo.ARC)
+                    new_path_info.append(self.full_path_info[j-3*lefts_counter])
+                    new_path_info.append(self.full_path_info[j+1-3*lefts_counter])
+                    new_path_info.append(angle_sum)
+                    lefts_counter = 0
+                    angle_sum = 0
+                new_path_type.append(self.full_path_type[i])
+                new_path_info.append(self.full_path_info[j])
+                new_path_info.append(self.full_path_info[j+1])
+                j = j+2
+            i = i+1
+
+        print("Old path info: ", self.full_path_info)
+        print("\n\n\n\n")
+        print("New path info: ", new_path_info)
+
+        self.full_path_type.clear()
+        self.full_path_info.clear()
+        self.full_path_type = new_path_type
+        self.full_path_info = new_path_info
 
     def DubinsInterpolator(self, waypoints):
         self.total_length = 0
@@ -223,6 +307,8 @@ class DubinsGenerator():
     #-----------------------------------
 
     def RSR_path(self):
+
+        print("MAKING RSR PATH")
         self.full_path_type.append(PathInfo.ARC)
         self.full_path_info.append(self.p1)
         self.full_path_info.append(self.c1_r)
@@ -310,7 +396,8 @@ class DubinsGenerator():
         center_circle_dist = np.linalg.norm(self.c2_r-self.c1_r)
         center_line_angle = self.wrapTo2Pi(np.arctan2(self.c2_r[1]-self.c1_r[1], self.c2_r[0]-self.c1_r[0]))
         # alpha = np.arccos(2*self.r_min/center_circle_dist)
-
+        print("Center Circle Dist: ", center_circle_dist)
+        
         alpha = self.wrapTo2Pi(np.arcsin(center_circle_dist/(2*2*self.r_min)))
         beta = self.wrapTo2Pi(np.pi/2-alpha)
         escape_angle = self.wrapTo2Pi(center_line_angle-beta-np.pi/2)
@@ -342,6 +429,8 @@ class DubinsGenerator():
         center_circle_dist = np.linalg.norm(self.c2_l-self.c1_l)
         center_line_angle = self.wrapTo2Pi(np.arctan2(self.c2_l[1]-self.c1_l[1], self.c2_l[0]-self.c1_l[0]))
         # alpha = np.arccos(2*self.r_min/center_circle_dist)
+
+        print("Center Circle Dist: ", center_circle_dist)
 
         alpha = self.wrapTo2Pi(np.arcsin(center_circle_dist/(2*2*self.r_min)))
         beta = self.wrapTo2Pi(np.pi/2-alpha)

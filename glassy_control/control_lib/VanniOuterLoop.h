@@ -29,6 +29,8 @@ private:
     float gamma_dot_dot_ = 0.0;
     float delta_;
 
+    bool changed_segment_ = false;
+
     bool traj_tracking_ = true;
 
     float prev_time_ = 0.0;
@@ -55,6 +57,8 @@ public:
     ~VanniOuterLoop(){};
     void computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration) ;
     void reset();
+    void set_segment_change_flag(){this->changed_segment_ = true;};
+
 };
 
 

@@ -20,10 +20,21 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
 
     nd->declare_parameter("JLIntegrated_params.trajtracking",  true);
 
+    nd->declare_parameter("JLIntegrated_params.integral_u_max", 1.0);
+    nd->declare_parameter("JLIntegrated_params.integral_r_max", 1.0);
+
+    nd->declare_parameter("JLIntegrated_params.kd_u", 0.1);
+    nd->declare_parameter("JLIntegrated_params.kd_r", 0.1);
+
 
 
     k1_ = nd->get_parameter("JLIntegrated_params.k1").as_double();
     k2_ = nd->get_parameter("JLIntegrated_params.k2").as_double();
+
+
+    kd_u_ = nd->get_parameter("JLIntegrated_params.kd_u").as_double();
+    kd_r_ = nd->get_parameter("JLIntegrated_params.kd_r").as_double();
+
     k_gamma_ = nd->get_parameter("JLIntegrated_params.k_gamma").as_double();
     float delta_ = nd->get_parameter("JLIntegrated_params.delta").as_double();
 
@@ -32,6 +43,9 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
 
     ki_u_ = nd->get_parameter("JLIntegrated_params.ki_u").as_double();
     ki_r_ = nd->get_parameter("JLIntegrated_params.ki_r").as_double();
+
+    integral_u_max_ = nd->get_parameter("JLIntegrated_params.integral_u_max").as_double();
+    integral_r_max_ = nd->get_parameter("JLIntegrated_params.integral_r_max").as_double();
 
     traj_tracking_ = nd->get_parameter("JLIntegrated_params.trajtracking").as_bool();
 
@@ -45,6 +59,10 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.kp_r: %f", kp_r_);
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_u: %f", ki_u_);
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_r: %f", ki_r_);
+
+
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.integral_u_max: %f", integral_u_max_);
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.integral_r_max: %f", integral_r_max_);
 
 
 
@@ -72,8 +90,8 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
             0, ki_r_;
 
     //TODO: check this derivative term and if it helps
-    Kd_<< 0.1, 0,
-          0, 0.1;
+    Kd_<< kd_u_, 0,
+          0, kd_r_;
 
 
     K_drag_est_ = Eigen::MatrixXd(10, 10);
@@ -136,6 +154,9 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
         this->gamma_publisher->publish(gamma_msg_);
         prev_time_ = node_ptr_->get_clock()->now().nanoseconds();
         return;
+    } else if(duration < 0.00001){
+        std::cout<<"Duration is too small"<<std::endl;
+        return;
     }
 
 
@@ -149,6 +170,8 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     float vd = speed/p_deriv.norm();
 
     float dt = duration;
+
+
 
     Eigen::Matrix2d rot_I_to_B;
     rot_I_to_B<< cos(state->yaw), sin(state->yaw),
@@ -169,14 +192,30 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
     /* Get the gamma_dot_dot_ value, this is the acceleration of the virtual target*/
     float gamma_d_err = gamma_dot_ - vd;
-    gamma_dot_dot_ = -k_gamma_*gamma_d_err + p_err.transpose()*rot_I_to_B*p_deriv;
+
+    float gamma_d_err_deriv = 0.0;
+    if(!first_time_){
+        gamma_d_err_deriv = (gamma_d_err-gamma_d_err_prev_)/dt;
+    }
+    float k_gamma_deriv = 0.0;
+    gamma_dot_dot_ = -k_gamma_*gamma_d_err + p_err.transpose()*rot_I_to_B*p_deriv - k_gamma_deriv * gamma_d_err_deriv;
+
+    float vd_dot = 0.0;
+    if(!first_time_){
+        vd_dot = (vd - prev_vd_)/dt;
+        gamma_dot_dot_ = gamma_dot_dot_ + vd_dot;
+    }
 
 
     /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
-    if(traj_tracking_){
+    if(traj_tracking_ || first_time_ || changed_segment_){
         gamma_dot_ = vd;
     } else{
         gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
+        if(gamma_dot_ < 0.0){
+            gamma_dot_ = 0.0;
+        }
+        changed_segment_ = false;
     }
 
     /*Update gamma, take care of case when gamma<0*/
@@ -201,6 +240,8 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     /* Get the 'ideal inputs'*/ 
     float u_star = refs(0);
     float r_star = refs(1);
+
+
 
 
     /* calculate the derivative of the ideal inpts */ 
@@ -230,15 +271,22 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
         tracking_err_deriv = (tracking_err - prev_tracking_err_)/dt;
     }
 
-    /* Calculate the integral of the error*/
-    // check if integral is to be updated
-    if(integral_vec_(0) < integral_u_max_ && integral_vec_(0) > -integral_u_max_){
-        integral_vec_(0) = integral_vec_(0) + tracking_err(0)*dt;
-    }
-    if(integral_vec_(1) < integral_r_max_ && integral_vec_(1) > -integral_r_max_){
-        integral_vec_(1) = integral_vec_(1) + tracking_err(1)*dt;
+
+    // correct the previous implementation of integrals, because it was wrong
+    integral_vec_(0) = integral_vec_(0) + tracking_err(0)*dt;
+    if(integral_vec_(0) > integral_u_max_){
+        integral_vec_(0) = integral_u_max_;
+    } else if(integral_vec_(0) < -integral_u_max_){
+        integral_vec_(0) = -integral_u_max_;
     }
 
+    integral_vec_(1) = integral_vec_(1) + tracking_err(1)*dt;
+    if(integral_vec_(1) > integral_r_max_){
+        integral_vec_(1) = integral_r_max_;
+    } else if(integral_vec_(1) < -integral_r_max_){
+        integral_vec_(1) = -integral_r_max_;
+    }
+    
 
 
 
@@ -247,7 +295,8 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
     
-    // Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(-p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - integral_mat*integral_vec_; 
+    // Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err  ; 
+
     Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - Ki_*integral_vec_ - Kd_*tracking_err_deriv ; 
 
     // //test but should be equal to this:
@@ -278,6 +327,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
     // get the actuator values
+    // Eigen::Vector2d actuator_values = getActuatorsFromDesiredAccelerations(desired_accelerations(0), desired_accelerations(1), state);
     Eigen::Vector2d actuator_values = getActuatorsFromDesiredAccelerations(desired_accelerations(0), desired_accelerations(1), state, cancel_u_dot, cancel_r_dot);
 
 
@@ -288,6 +338,12 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
     // previous tracking error
     prev_tracking_err_ = tracking_err;
+
+    // update previous vd
+    prev_vd_ = vd;
+
+    // update the previous gamma_speed
+    prev_gamma_speed_ = gamma_dot_*p_deriv.norm();
 
     /*Update the actuator msg  and gamma msg fields and publish*/
     actuator_msg.thrust = actuator_values(0);
@@ -314,7 +370,21 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     debug_msg.r_err = error_r;
     debug_msg.p_err_x_body = p_err(0);
     debug_msg.p_err_y_body = p_err(1);
+    debug_msg.gamma_dot = gamma_dot_;
+    debug_msg.gamma_dot_dot = gamma_dot_dot_;
 
+
+    // change so its first row
+    debug_msg.u_deriv_contrib = -Kd_.row(0)*tracking_err_deriv;
+    debug_msg.u_integral_contrib = -Ki_.row(0)*integral_vec_;
+    debug_msg.u_proportional_contrib = -Kp_.row(0)*tracking_err;
+
+    debug_msg.u_star_deriv_contrib = ref_star_dot(0);
+    debug_msg.r_star_deriv_contrib = ref_star_dot(1);
+    
+    debug_msg.r_deriv_contrib = -Kd_.row(1)*tracking_err_deriv;
+    debug_msg.r_integral_contrib = -Ki_.row(1)*integral_vec_;
+    debug_msg.r_proportional_contrib = -Kp_.row(1)*tracking_err;
     /* publish debug msg*/
     debug_publisher->publish(debug_msg);
 
@@ -326,6 +396,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 void JLthesis::reset(){
     std::cout<<"Resetting the JLthesis"<<std::endl;
     gamma_ = 0.0;
+    gamma_dot_ = 0.0;
     is_on_ = false;
     first_time_ = true;
     integral_vec_<< 0.0, 0.0;

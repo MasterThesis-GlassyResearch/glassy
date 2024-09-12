@@ -47,8 +47,15 @@ private:
     float gamma_dot_ = 0.0;
     float gamma_dot_dot_ = 0.0;
 
+    float prev_vd_ = 0.0;
+    float gamma_d_err_prev_ = 0.0;
+
     float prev_u_star_ = 0.0;
     float prev_r_star_ = 0.0;
+
+    bool changed_segment_ = false;
+
+    float prev_gamma_speed_ = 0.0;
 
     Eigen::Vector2d integral_vec_;
 
@@ -105,6 +112,7 @@ public:
     ~JLthesis(){};
     void computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Vector2d pose_ref,Eigen::Vector2d p_deriv,Eigen::Vector2d p_2nd_deriv, float speed, float duration) ;
     void reset();
+    void set_segment_change_flag(){this->changed_segment_ = true;};
 };
 
 

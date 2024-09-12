@@ -51,6 +51,9 @@ private:
 
     float speed = 1;
 
+    int prev_index_ = 0;
+    bool changed_segment_ = false;
+
     void runController();
 
     long long int last_time_publishing_nanosecs = 0;

@@ -132,7 +132,7 @@ void VanniOuterLoop::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eig
 
 
     /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
-    if(traj_tracking_){
+    if(traj_tracking_ || changed_segment_){
         gamma_dot_ = vd;
     } else{
         gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;

@@ -68,7 +68,7 @@ class GlassyPathGen(Node):
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
-        self.speed = 8.0
+        self.speed = 6.0
         self.lat = math.nan
         self.lon = math.nan
 
@@ -201,7 +201,8 @@ class GlassyPathGen(Node):
         """
         Generate the path and publish the message
         """
-
+        if(self.is_active == False):
+            return
         if(self.needs_to_be_corrected):
             if(self.correct_home_position()):
                 self.needs_to_be_corrected = False                
@@ -212,10 +213,17 @@ class GlassyPathGen(Node):
         if self.path_gen_method == "dubins":
             if(not self.online_gen and self.needs_to_be_calculated== True):
                 self.pathgen_dubins.DubinsInterpolator(np.vstack([np.array([self.x, self.y, self.yaw]), self.circuit]))
+                self.get_logger().info('PATH SIZE BEFORE: {}'.format(len(self.pathgen_dubins.full_path_type)))
+                self.pathgen_dubins.simplify_path()
+                self.get_logger().info('PATH SIZE AFTER: {}'.format(len(self.pathgen_dubins.full_path_type)))
+
                 self.path_msg.path_recalculated = True
                 self.needs_to_be_calculated = False
             elif(self.online_gen):
                 self.pathgen_dubins.DubinsInterpolator(np.vstack([np.array([self.x, self.y, self.yaw]), np.take(self.circuit, range(self.current_gate*3, self.current_gate*3+3*self.number_gates_in_advance), mode='wrap').reshape(2, 3)]))
+                self.get_logger().info('PATH SIZE AFTER: {}'.format(len(self.pathgen_dubins.full_path_type)))
+                self.pathgen_dubins.simplify_path()
+                self.get_logger().info('PATH SIZE AFTER: {}'.format(len(self.pathgen_dubins.full_path_type)))
                 self.path_msg.path_recalculated = True
             self.path_msg.desired_path_velocity_per_segment = [self.speed] * len(self.pathgen_dubins.full_path_type)
             self.path_msg.path_segments = self.pathgen_dubins.full_path_type

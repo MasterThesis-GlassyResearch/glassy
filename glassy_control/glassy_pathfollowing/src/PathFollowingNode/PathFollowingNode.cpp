@@ -53,8 +53,16 @@ void PathFollowingNode::runController(){
         this->LOSPathFollowingYawRate.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
 
     } else if(this->controller_type=="Vanni"){
+        if(this->changed_segment_){
+            this->VanniPathFollowing.set_segment_change_flag();
+            this->changed_segment_ = false;
+        }
         this->VanniPathFollowing.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
     } else if(this->controller_type=="JLIntegrated"){
+        if(this->changed_segment_){
+            this->VanniPathFollowing.set_segment_change_flag();
+            this->changed_segment_ = false;
+        }
         this->JLthesisPF.computeOutput(this->state_struct, this->pose_ref,this->p_deriv, this->p_2nd_deriv, this->speed, duration);
     }
 
@@ -82,6 +90,10 @@ void PathFollowingNode::path_subscription_callback(const glassy_msgs::msg::PathR
     this->p_2nd_deriv = Eigen::Vector2d(msg->path_secnd_deriv[0], msg->path_secnd_deriv[1]);
     this->pose_ref = Eigen::Vector2d(msg->pose_ref[0], msg->pose_ref[1]);
 
+    if(this->prev_index_ != msg->path_segment_index){
+        this->changed_segment_ = true;
+        this->prev_index_ = msg->path_segment_index;
+    }
     this->speed = msg->path_vel;
 
 }
