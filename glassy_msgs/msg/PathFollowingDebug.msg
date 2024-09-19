@@ -8,6 +8,8 @@ float64[] yawrate_drag_param_estimates
 float64 gamma_dot
 float64 gamma_dot_dot
 
+float64 gamma_dot_err
+
 float64 u_star
 float64 r_star
 

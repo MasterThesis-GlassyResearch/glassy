@@ -26,6 +26,9 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     nd->declare_parameter("JLIntegrated_params.kd_u", 0.1);
     nd->declare_parameter("JLIntegrated_params.kd_r", 0.1);
 
+    nd->declare_parameter("JLIntegrated_params.reset_r_integral", false);
+
+    reset_r_integral_ = nd->get_parameter("JLIntegrated_params.reset_r_integral").as_bool();
 
 
     k1_ = nd->get_parameter("JLIntegrated_params.k1").as_double();
@@ -210,6 +213,10 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
     if(traj_tracking_ || first_time_ || changed_segment_){
         gamma_dot_ = vd;
+
+        if(reset_r_integral_){
+            integral_vec_(1) = 0.0;
+        }
     } else{
         gamma_dot_ = gamma_dot_ + gamma_dot_dot_*dt;
         if(gamma_dot_ < 0.0){
@@ -308,7 +315,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
                        0, 0, 0, 0, 0, yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];  
 
     /* Update the parameters of the drag dynamics*/
-    params_estimate = params_estimate + 0.005*DragDynamicsMatrix.transpose()*tracking_err * dt;
+    params_estimate = params_estimate + 0.001*DragDynamicsMatrix.transpose()*tracking_err * dt;
 
 
     DragDynamicsMatrix = Eigen::MatrixXd(2 , 10);
@@ -372,6 +379,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     debug_msg.p_err_y_body = p_err(1);
     debug_msg.gamma_dot = gamma_dot_;
     debug_msg.gamma_dot_dot = gamma_dot_dot_;
+    debug_msg.gamma_dot_err = gamma_d_err;
 
 
     // change so its first row

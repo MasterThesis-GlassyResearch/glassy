@@ -54,6 +54,7 @@ private:
     float prev_r_star_ = 0.0;
 
     bool changed_segment_ = false;
+    bool reset_r_integral_ = false;
 
     float prev_gamma_speed_ = 0.0;
 

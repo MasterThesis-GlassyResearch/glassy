@@ -68,7 +68,7 @@ class GlassyPathGen(Node):
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
-        self.speed = 6.0
+        self.speed = 8.0
         self.lat = math.nan
         self.lon = math.nan
 
