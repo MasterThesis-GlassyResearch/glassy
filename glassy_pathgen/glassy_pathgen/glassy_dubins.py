@@ -65,7 +65,6 @@ class DubinsGenerator():
         '''
         If arcs in the same direction are found, they can be combined into one arc
         '''
-
         print("Simplifying path")
         i = 0
         j = 0

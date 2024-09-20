@@ -164,13 +164,23 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
 
-    if(p_deriv.norm() < 0.000000001){
+    if(p_deriv.norm() < 0.0001){
         std::cout<<"p_deriv is too small"<<std::endl;
         this->gamma_publisher->publish(gamma_msg_);
         prev_time_ = node_ptr_->get_clock()->now().nanoseconds();
         return;
     }
     float vd = speed/p_deriv.norm();
+    
+    if(vd>10.0){
+        std::cout<<"vd is too large"<<std::endl;
+        // print some variables
+        std::cout<<"vd: "<<vd<<std::endl;
+        std::cout<<"speed: "<<speed<<std::endl;
+        std::cout<<"p_deriv: "<<p_deriv(0)<<" "<<p_deriv(1)<<std::endl;
+        std::cout<<"norm p_deriv: "<<p_deriv.norm()<<std::endl;
+        return;
+    }
 
     float dt = duration;
 
@@ -209,7 +219,12 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
         gamma_dot_dot_ = gamma_dot_dot_ + vd_dot;
     }
 
-
+    // limit gamma_dot_dot_
+    if(gamma_dot_dot_ > 0.5){
+        gamma_dot_dot_ = 0.5;
+    } else if(gamma_dot_dot_ < -0.5){
+        gamma_dot_dot_ = -0.5;
+    }
     /* Check whether or not to track the trajectory, or to use gamma_dot_dot_ designated from the path following approach */
     if(traj_tracking_ || first_time_ || changed_segment_){
         gamma_dot_ = vd;
@@ -323,7 +338,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
     
-    DragDynamicsMatrix << r*v, u, u*abs(u), u*abs(r), u*u*abs(r), 0, 0, 0, 0, 0,
+    DragDynamicsMatrix << r*v, u, u*u, u*abs(r), u*u*abs(r), 0, 0, 0, 0, 0,
                             0, 0, 0, 0, 0 ,v*u, r, r*abs(r), u*r, u*u;
 
 

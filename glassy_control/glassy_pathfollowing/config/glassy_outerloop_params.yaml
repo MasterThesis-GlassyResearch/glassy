@@ -28,23 +28,40 @@
       # integral_u_max: 3.0
       # integral_r_max: 1.0
 
-      k1: 0.5
+      # k1: 0.5
+      # k2: 3.0
+      # kp_u: 5.0
+      # kp_r: 10.0
+
+      # kd_u: 0.2
+      # kd_r: 1.0
+
+      # ki_u: 2.0
+      # ki_r: 2.0
+      # K_gamma: 0.01
+      # delta: -0.8
+      # trajtracking: true
+      # integral_u_max: 3.0
+      # integral_r_max: 2.0
+
+      # reset_r_integral: true
+
+      # for perfect simulation
+      k1: 3.0
       k2: 3.0
-      kp_u: 5.0
-      kp_r: 10.0
+      kp_u: 15.0
+      kp_r: 15.0
 
-      kd_u: 0.2
-      kd_r: 1.0
+      kd_u: 0.01
+      kd_r: 0.01
 
-      ki_u: 2.0
-      ki_r: 2.0
+      ki_u: 0.0
+      ki_r: 0.0
       K_gamma: 0.01
       delta: -0.8
-      trajtracking: false
+      trajtracking: true
       integral_u_max: 3.0
       integral_r_max: 2.0
-
-      reset_r_integral: true
 
     Vanni_params:
       k1: 4.0
