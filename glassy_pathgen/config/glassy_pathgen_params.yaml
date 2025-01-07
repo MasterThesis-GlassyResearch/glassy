@@ -1,10 +1,8 @@
 /**:
   ros__parameters:
     glassy_pathgen:
-      # home_lat: 38.766040120113615 
-      # home_lon: -9.092953087610141
-      home_lat: 0.0001 
-      home_lon: 0.0001
+      home_lat: 38.766040120113615 
+      home_lon: -9.092953087610141
       path_defs:
         path_type: "dubins"
         r_min: 6.0
@@ -14,6 +12,7 @@
         ignore_start_loop: true
         speed_arcs: 3.0
         speed_straight: 5.0
+        speed: 3.0
 
       folder_circuits: "target_examples"
       circuit: "circuit_1.py"

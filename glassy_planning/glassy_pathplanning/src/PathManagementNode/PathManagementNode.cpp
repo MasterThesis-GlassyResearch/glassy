@@ -457,6 +457,7 @@ void PathManagementNode::deactivate()
 {
     this->is_active = false;
     this->loop = false;
+    this->path_is_set = false;
     if(this->use_timer){
         this->timer->cancel();
     }

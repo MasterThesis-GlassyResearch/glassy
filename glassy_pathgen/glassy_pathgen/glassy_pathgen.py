@@ -33,6 +33,8 @@ class GlassyPathGen(Node):
         self.state_subscriber_ = self.create_subscription(glassy_msgs.State, 'glassy/state', self.state_callback, 1)
 
 
+
+
         # get the parameters from the files
         self.rate = self.get_parameter('glassy_pathgen.path_defs.rate').get_parameter_value().double_value
         self.min_radius = self.get_parameter('glassy_pathgen.path_defs.r_min').get_parameter_value().double_value
@@ -42,6 +44,7 @@ class GlassyPathGen(Node):
         self.ignore_start_loop = self.get_parameter('glassy_pathgen.path_defs.ignore_start_loop').get_parameter_value().bool_value
         self.speed_of_straight_segments = self.get_parameter('glassy_pathgen.path_defs.speed_of_straight_segments').get_parameter_value().double_value
         self.speed_of_turn_segments = self.get_parameter('glassy_pathgen.path_defs.speed_of_turn_segments').get_parameter_value().double_value
+        self.speed = self.get_parameter('glassy_pathgen.path_defs.speed').get_parameter_value().double_value
 
         self.home_lat = self.get_parameter('glassy_pathgen.home_lat').get_parameter_value().double_value
         self.home_lon = self.get_parameter('glassy_pathgen.home_lon').get_parameter_value().double_value
@@ -63,12 +66,11 @@ class GlassyPathGen(Node):
         self.number_gates_in_advance = 2
 
         self.current_gate = 0
-
+        self.speed = 6.0
         self.gate_size = 1
         self.x = 0.0
         self.y = 0.0
         self.yaw = 0.0
-        self.speed = 8.0
         self.lat = math.nan
         self.lon = math.nan
 
@@ -135,9 +137,16 @@ class GlassyPathGen(Node):
     def correct_home_position(self):
         print('correcting home position')
 
+
+
         if(math.isnan(self.lat)):
             self.get_logger().info('no state available...')
             return False
+        
+        for i in range(len(self.circuit)):
+            self.circuit[i][0] = self.circuit[i][0] - self.x_correction
+            self.circuit[i][1] = self.circuit[i][1] - self.y_correction
+
         R_earth = 6378.137 * 1000
         lat_dif = np.pi/180 * (self.home_lat - self.lat)
         lon_dif = np.pi/180 * (self.home_lon - self.lon)
@@ -191,8 +200,10 @@ class GlassyPathGen(Node):
         else:
             if msg.mission_mode == glassy_msgs.MissionInfo.PATH_FOLLOWING:
                 self.needs_to_be_corrected = True
+                self.needs_to_be_calculated = True
                 self.timer.reset()
                 self.is_active = True
+
 
 
 

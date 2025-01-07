@@ -75,14 +75,18 @@ private:
     Eigen::Vector2d prev_tracking_err_;
     bool first_time_ = true;
 
+    float backstepping_const_ = 1.0;
+
     // initial dynamic model drag params
 
     // u_dot_cancel = p1vr + p2u + p3u2 + Et*Ut + p4u|r| + p5u2|r|
     // ET = a4
-    std::vector<double> surgeParamsDrag = { 1.1965, -0.6218, -0.0216, -0.1154, -0.0025};
+    std::vector<double> surgeParamsDrag = { 1.3315, -0.6368, -0.0207, -0.1659};
     // r_dot_cancel = p1vu + p2r + p3r|r| + p4ur + p5u2
-    std::vector<double> yawRateParamsDrag = { 2.1225, -0.8592, -0.0963, -1.9001,  0.0123};
+    std::vector<double> yawRateParamsDrag = { 1.8205, -0.9805, -1.1044, -1.56001,  0.2833};
     
+
+
     Eigen::VectorXd params_estimate;
 
     float prev_time_ = 0.0;

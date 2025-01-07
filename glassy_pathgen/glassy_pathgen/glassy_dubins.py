@@ -66,15 +66,44 @@ class DubinsGenerator():
         If arcs in the same direction are found, they can be combined into one arc
         '''
         print("Simplifying path")
-        i = 0
-        j = 0
+
         new_path_type = []
         new_path_info = []
+
+        j = 0
+        for i in range(0, 3):
+            new_path_type.append(self.full_path_type[i])
+            if(self.full_path_type[i] == PathInfo.ARC):
+                new_path_info.append(self.full_path_info[j])
+                new_path_info.append(self.full_path_info[j+1])
+                new_path_info.append(self.full_path_info[j+2])
+                j = j+3
+            else:
+                new_path_info.append(self.full_path_info[j])
+                new_path_info.append(self.full_path_info[j+1])
+                j = j+2
+
+
+
+
+
+
+
+        i = 3
+
         rigths_counter = 0
         lefts_counter = 0
         angle_sum = 0
+
+        print("Old path info: ", self.full_path_info)
+        print("\n\n\n\n")
+        print("old path type: ", self.full_path_type)
         while i<len(self.full_path_type):
             #check if current path is arc, and whether it goes right or left
+
+            print("\n\n\n") 
+            print("value: ", self.full_path_info[j+2])
+            print("\n\n\n") 
             if(self.full_path_type[i]==PathInfo.ARC and self.full_path_info[j+2]>0):
                 if(lefts_counter>0):
                     new_path_type.append(PathInfo.ARC)
@@ -497,7 +526,7 @@ class DubinsGenerator():
 def main(args=None):
 
     test = DubinsGenerator(1)
-    waypoints = [np.array([0,0,0]), np.array([10,0, 0]), np.array([10,-13, np.pi]), np.array([-4,0, -np.pi/2]), np.array([0,0, 0])]
+    waypoints = [np.array([0,0,0]), np.array([10,10, 0])]
     test.DubinsInterpolator(waypoints)
     test.full_path_plot()
 

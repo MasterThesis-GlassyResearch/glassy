@@ -44,7 +44,7 @@ class GlassyIdealSim(Node):
         r_noise: 0.0'''
 
         # declare all the parameters
-        self.declare_parameter('glassy_ideal_sim.rate', 100.0)
+        self.declare_parameter('glassy_ideal_sim.rate', 50.0)
         self.declare_parameter('glassy_ideal_sim.noise.x_noise', 0.0)
         self.declare_parameter('glassy_ideal_sim.noise.y_noise', 0.0)
         self.declare_parameter('glassy_ideal_sim.noise.yaw_noise', 0.0)
@@ -115,10 +115,10 @@ class GlassyIdealSim(Node):
         elif self.thrust < 0.0:
             self.thrust = 0.0
         
-        if self.rudder > 10.0:
-            self.rudder = 10.0
-        elif self.rudder < -10.0:
-            self.rudder = -10.0
+        if self.rudder > 1.0:
+            self.rudder = 1.0
+        elif self.rudder < -1.0:
+            self.rudder = -1.0
 
 
     def mission_status_timer_callback(self):
@@ -141,6 +141,7 @@ class GlassyIdealSim(Node):
         b = [-0.1885, -4.4450, -0.1937]
         c = [2.1225, -0.8592, -0.0963, 2.2910, -5.5000, -1.9001, 0.0123]
         angle_params = [60.0 * np.pi/180.0] # degrees
+
 
         # calculate the surge, sway and yaw rate accelerations
         # u = a1vr + a2u + a3u2 + ET · uT + a7u|r| + a8u2|r|

@@ -15,8 +15,8 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     nd->declare_parameter("JLIntegrated_params.ki_u", 1.0);
     nd->declare_parameter("JLIntegrated_params.ki_r", 1.0);
 
-    nd->declare_parameter("JLIntegrated_params.ku_param_update",  std::vector<int>({1, 2}));
-    nd->declare_parameter("JLIntegrated_params.kr_param_update",  std::vector<int>({1, 2}));
+    nd->declare_parameter("JLIntegrated_params.ku_param_update",  std::vector<double>({0.01, 0.01, 0.01, 0.01, 0.01}));
+    nd->declare_parameter("JLIntegrated_params.kr_param_update",  std::vector<double>({0.01, 0.01, 0.01, 0.01, 0.01}));
 
     nd->declare_parameter("JLIntegrated_params.trajtracking",  true);
 
@@ -25,6 +25,8 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
 
     nd->declare_parameter("JLIntegrated_params.kd_u", 0.1);
     nd->declare_parameter("JLIntegrated_params.kd_r", 0.1);
+
+    nd->declare_parameter("JLIntegrated_params.backstepping_term", 1.0);
 
     nd->declare_parameter("JLIntegrated_params.reset_r_integral", false);
 
@@ -41,6 +43,8 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     k_gamma_ = nd->get_parameter("JLIntegrated_params.k_gamma").as_double();
     float delta_ = nd->get_parameter("JLIntegrated_params.delta").as_double();
 
+    backstepping_const_ = nd->get_parameter("JLIntegrated_params.backstepping_term").as_double();
+
     kp_u_ = nd->get_parameter("JLIntegrated_params.kp_u").as_double();
     kp_r_ = nd->get_parameter("JLIntegrated_params.kp_r").as_double();
 
@@ -52,6 +56,10 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
 
     traj_tracking_ = nd->get_parameter("JLIntegrated_params.trajtracking").as_bool();
 
+    std::vector<double> ku_param_update = nd->get_parameter("JLIntegrated_params.ku_param_update").as_double_array();
+    std::vector<double> kr_param_update = nd->get_parameter("JLIntegrated_params.kr_param_update").as_double_array();
+    
+
     // rclcpp info all the parameters for debugging purposes
     RCLCPP_INFO(nd->get_logger(), "USING JL Integrated CONTROLLER");
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.k1: %f", k1_);
@@ -62,6 +70,8 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.kp_r: %f", kp_r_);
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_u: %f", ki_u_);
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.ki_r: %f", ki_r_);
+
+    RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.backstepping_term: %f", backstepping_const_);
 
 
     RCLCPP_INFO(nd->get_logger(), "JLIntegrated_params.integral_u_max: %f", integral_u_max_);
@@ -97,13 +107,15 @@ JLthesis::JLthesis(std::shared_ptr<rclcpp::Node> nd, rclcpp::Publisher<glassy_ms
           0, kd_r_;
 
 
-    K_drag_est_ = Eigen::MatrixXd(10, 10);
+    K_drag_est_ = Eigen::MatrixXd(9, 9);
 
 
+    // put the values of the parameters into the matrix diagonal first u then r
+    K_drag_est_.diagonal() << ku_param_update[0], ku_param_update[1], ku_param_update[2], ku_param_update[3], kr_param_update[0], kr_param_update[1], kr_param_update[2], kr_param_update[3], kr_param_update[4];
 
-
-    params_estimate = Eigen::VectorXd(10);
-    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
+    std::cout<<"K_drag_est_ equals "<<K_drag_est_<<std::endl;
+    params_estimate = Eigen::VectorXd(9);
+    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
 
                 
 
@@ -172,7 +184,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     }
     float vd = speed/p_deriv.norm();
     
-    if(vd>10.0){
+    if(vd>40.0){
         std::cout<<"vd is too large"<<std::endl;
         // print some variables
         std::cout<<"vd: "<<vd<<std::endl;
@@ -200,7 +212,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     Eigen::Vector2d tanh_pos_err(tanh(p_err(0)), tanh(p_err(1)));
     
     /* Get the references for the path following controller (see thesis Vanni)*/
-    Eigen::Vector2d refs = delta_mat_inv_*(-K_mat_*tanh_pos_err- Eigen::Vector2d(0.0, state->v_body[1]) + rot_I_to_B*p_deriv*vd);
+    Eigen::Vector2d refs = delta_mat_inv_*(-K_mat_*tanh_pos_err - Eigen::Vector2d(0.0, state->v_body[1]) + rot_I_to_B*p_deriv*vd);
 
 
     /* Get the gamma_dot_dot_ value, this is the acceleration of the virtual target*/
@@ -271,6 +283,7 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     float r_dot_star = (r_star - prev_r_star_)/dt;
 
 
+
     /*Get the state info*/
     float u = state->v_body[0];
     float r = state->yaw_rate;
@@ -312,38 +325,32 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
 
 
 
+    // calculate the desired acceleration in surge and desired angular acceleration in yaw rate
 
- 
-
-
-    
-    // Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err  ; 
-
-    Eigen::Vector2d desired_accelerations = ref_star_dot - (tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - Ki_*integral_vec_ - Kd_*tracking_err_deriv ; 
+    /*
+        MAKE SURE TO CORRECT AND CHECK TAHAT THIS IS CHANGED SUCH THAT THE DERIVATIVE ACTION IS CORRECT
+        \\TODO
+    */
+   // Eigen::Vector2d desired_accelerations = ref_star_dot - (Eigen::Matrix2d::Identity()+Kd_)*(tracking_err/tracking_err.norm())*(p_err.transpose()*delta_mat_*tracking_err )- Kp_*tracking_err - Ki_*(Eigen::Matrix2d::Identity()+Kd_).inverse().transpose()*integral_vec_ - Kd_*tracking_err_deriv ; 
 
     // //test but should be equal to this:
-    // Eigen::Vector2d desired_accelerations = ref_star_dot - delta_mat_.transpose()*p_err - Kp_*tracking_err - Ki_*integral_vec_ - Kd_*tracking_err_deriv; 
+    Eigen::Vector2d desired_accelerations = ref_star_dot - backstepping_const_*(Eigen::Matrix2d::Identity()+Kd_).inverse()*delta_mat_.transpose()*p_err - Kp_*tracking_err - Ki_*(Eigen::Matrix2d::Identity()+Kd_).inverse().transpose()*integral_vec_ - Kd_*tracking_err_deriv; 
 
 
-    DragDynamicsMatrix = Eigen::MatrixXd(2 , 10);
-    DragDynamicsMatrix << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], 0, 0, 0, 0, 0,
-                       0, 0, 0, 0, 0, yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];  
+    // generate the time varying drag dynamics matrix
+    DragDynamicsMatrix = Eigen::MatrixXd(2 , 9);
+    DragDynamicsMatrix << r*v, u, u*u, u*abs(r),  0, 0, 0, 0, 0,
+                            0, 0, 0, 0 ,v*u, r, r*abs(r), u*r, u*u;
 
     /* Update the parameters of the drag dynamics*/
-    params_estimate = params_estimate + 0.001*DragDynamicsMatrix.transpose()*tracking_err * dt;
-
-
-    DragDynamicsMatrix = Eigen::MatrixXd(2 , 10);
-
-
-
-    
-    DragDynamicsMatrix << r*v, u, u*u, u*abs(r), u*u*abs(r), 0, 0, 0, 0, 0,
-                            0, 0, 0, 0, 0 ,v*u, r, r*abs(r), u*r, u*u;
+    params_estimate = params_estimate + K_drag_est_*( (Eigen::Matrix2d::Identity()+Kd_).inverse() *  DragDynamicsMatrix).transpose()*tracking_err * dt;
 
 
 
 
+
+
+    // calculate the cancelation terms
     float cancel_u_dot = DragDynamicsMatrix.row(0)*params_estimate;
     float cancel_r_dot = DragDynamicsMatrix.row(1)*params_estimate;
 
@@ -376,8 +383,8 @@ void JLthesis::computeOutput(glassy_msgs::msg::State::SharedPtr state, Eigen::Ve
     this->gamma_publisher->publish(gamma_msg_);
 
 
-    std::vector<double> surgeParamsDrag_estimated = {params_estimate(0), params_estimate(1), params_estimate(2), params_estimate(3), params_estimate(4), integral_vec_(0)};
-    std::vector<double> yawRateParamsDrag_estimated = {params_estimate(5), params_estimate(6), params_estimate(7), params_estimate(8), params_estimate(9), integral_vec_(1)};
+    std::vector<double> surgeParamsDrag_estimated = {params_estimate(0), params_estimate(1), params_estimate(2), params_estimate(3), integral_vec_(0)};
+    std::vector<double> yawRateParamsDrag_estimated = {params_estimate(4), params_estimate(5), params_estimate(6), params_estimate(7), params_estimate(8), integral_vec_(1)};
 
     /*fill in the debug msg*/
     debug_msg.header.stamp = node_ptr_->get_clock()->now();
@@ -426,6 +433,6 @@ void JLthesis::reset(){
     if(params_estimate.rows() == 0 || params_estimate.cols() == 0){
         return;
     }
-    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3], surgeParamsDrag[4], yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
+    params_estimate << surgeParamsDrag[0], surgeParamsDrag[1], surgeParamsDrag[2], surgeParamsDrag[3],  yawRateParamsDrag[0], yawRateParamsDrag[1], yawRateParamsDrag[2], yawRateParamsDrag[3], yawRateParamsDrag[4];
 
 }

@@ -1,7 +1,7 @@
 /**:
   ros__parameters:
     glassy_ideal_sim:
-      rate: 50.0
+      rate: 150.0
       noise:
         x_noise: 0.0
         y_noise: 0.0
@@ -9,4 +9,8 @@
         u_noise: 0.0
         v_noise: 0.0
         r_noise: 0.0
+
+      disturbance:
+        u_disturbance: 0.0
+        r_disturbance: 0.0
       
